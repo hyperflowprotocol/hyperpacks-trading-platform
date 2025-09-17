@@ -4,7 +4,7 @@
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-  --header-height: 112px;
+  --header-height: 80px; /* Reduced from 112px for mobile */
   padding-top: calc(var(--header-height) + env(safe-area-inset-top));
   padding-top: calc(var(--header-height) + constant(safe-area-inset-top));
 }
@@ -18,9 +18,9 @@
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-primary);
   z-index: 1000;
-  padding: 24px 24px;
-  padding-top: calc(24px + env(safe-area-inset-top));
-  padding-top: calc(24px + constant(safe-area-inset-top));
+  padding: 16px 20px; /* Reduced padding for mobile */
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-top: calc(16px + constant(safe-area-inset-top));
   min-height: calc(var(--header-height) + env(safe-area-inset-top));
   min-height: calc(var(--header-height) + constant(safe-area-inset-top));
 }
@@ -132,6 +132,8 @@
   box-shadow: 0 8px 32px rgba(0, 204, 221, 0.3);
   display: block;
   margin: 0 auto;
+  object-fit: contain; /* Prevent cropping */
+  max-height: 200px; /* Limit height on mobile */
 }
 
 /* SVG Icon Styles */
@@ -809,11 +811,14 @@
   
   /* Mobile Banner */
   .banner-section {
-    margin-bottom: 32px;
+    margin-bottom: 20px;
+    padding: 0 16px; /* Reduce side padding on mobile */
   }
   
   .banner-image {
     border-radius: 12px;
+    max-height: 160px; /* Further reduce height on mobile */
+    width: calc(100% - 32px); /* Add side margins */
   }
   
   .detail-grid,
