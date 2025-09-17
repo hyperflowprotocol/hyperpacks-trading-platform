@@ -130,7 +130,7 @@ const docPages = [
       <div class="detail-grid">
         <div class="detail-item">
           <h3><svg class="detail-icon" width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Total Supply</h3>
-          <p><strong>2,000 passes</strong> - Ultra limited collection</p>
+          <p><strong>1,111 passes</strong></p>
         </div>
         <div class="detail-item">
           <h3><svg class="detail-icon" width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7.1L12 17.7l-5.9 3.4 2.3-7.1-6-4.6h7.6z"/></svg> Pricing</h3>
@@ -142,7 +142,7 @@ const docPages = [
         </div>
         <div class="detail-item">
           <h3><svg class="detail-icon" width="20" height="20" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="6" stroke="white" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="2" fill="white"/></svg> Rarity</h3>
-          <p><strong>Ultra Exclusive</strong> - Limited membership</p>
+          <p><strong>Limited membership</strong></p>
         </div>
       </div>
       
