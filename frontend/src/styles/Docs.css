@@ -122,6 +122,7 @@
   margin: 0;
   padding: 0 24px;
   text-align: center;
+  background: var(--bg-primary); /* Prevent white background bleed */
 }
 
 .banner-image {
@@ -809,16 +810,14 @@
     font-size: 1.5rem;
   }
   
-  /* Mobile Banner */
+  /* Mobile Banner - Hide to prevent white space */
   .banner-section {
-    margin-bottom: 20px;
-    padding: 0 16px; /* Reduce side padding on mobile */
+    display: none; /* Hide banner on mobile to prevent white strip */
   }
   
-  .banner-image {
-    border-radius: 12px;
-    max-height: 160px; /* Further reduce height on mobile */
-    width: calc(100% - 32px); /* Add side margins */
+  /* Remove extra margin when banner is hidden */
+  .gitbook-main {
+    margin-top: 0; /* Remove gap between header and content */
   }
   
   .detail-grid,
