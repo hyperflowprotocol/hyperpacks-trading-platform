@@ -232,7 +232,7 @@ const Presale = () => {
         // Refresh blockchain data to get latest balance across all devices
         await refreshPresaleStats();
         
-        showToast('Transaction confirmed! Progress updated across all devices.', 'success');
+        showToast('Transaction confirmed! Progress updated.', 'success');
       }, 3000); // 3 second delay to simulate confirmation wait
       
       // Reset form after success
