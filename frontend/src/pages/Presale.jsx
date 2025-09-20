@@ -362,7 +362,7 @@ const Presale = () => {
           {/* Banner Section */}
           <section className="banner-section">
             <img 
-              src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeihojrsm66vtxjqia6skjl6jb6rnw2avrvejaehpv52leyafk5awc4" 
+              src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeidregjjs577tozk7nw3mod3kov24wy54k2cqjtkuh6556ccnsft6u" 
               alt="HyperPack Banner" 
               className="banner-image"
             />
