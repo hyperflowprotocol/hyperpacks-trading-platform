@@ -8,8 +8,18 @@ const LaunchApp = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const [showToast, setShowToast] = useState(false);
 
+  const openPack = () => {
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2000); // Hide after 2 seconds
+  };
+
+
+
   return (
     <div className="launch-app">
+
       {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
@@ -52,26 +62,97 @@ const LaunchApp = () => {
             />
           </section>
 
-          {/* Simple Call to Action */}
-          <section className="cta-section">
+
+          {/* Pack Opening Section */}
+          <section className="pack-opening">
             <div className="section-card">
-              <h2 className="brand-gradient-text">Welcome to HyperPack</h2>
-              <p>Join the HYPACK token presale and be part of the future!</p>
-              <Link to="/presale" className="btn btn-primary">
-                View Token Presale
-              </Link>
+              <h2 className="brand-gradient-text">Open Mystery Packs</h2>
+              <div className="packs-grid">
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Common Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Epic Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Legendary Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Mythic Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Rare Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Ultra Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Secret Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Premium Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Master Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Champion Pack" />
+                  </div>
+
+                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                </div>
+              </div>
             </div>
           </section>
+
+
 
         </div>
       </main>
 
       <Footer />
 
-      {/* Toast Notification */}
+      {/* Toast Notification for Pack Opening */}
       {showToast && (
         <div className="toast">
-          Please connect your wallet
+          Coming Soon
         </div>
       )}
 
