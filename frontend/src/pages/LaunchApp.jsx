@@ -93,38 +93,6 @@ const LaunchApp = () => {
       <main className="app-main">
         <div className="app-container">
           
-          {/* Banner Section */}
-          <section className="banner-section">
-            <img 
-              src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeihojrsm66vtxjqia6skjl6jb6rnw2avrvejaehpv52leyafk5awc4" 
-              alt="HyperPack Banner" 
-              className="banner-image"
-            />
-          </section>
-
-          {/* Presale Progress Section */}
-          <section className="presale-progress">
-            <div className="section-card">
-              <h2 className="brand-gradient-text">HYPACK Token Presale</h2>
-              <p className="presale-description">
-                Join the presale for exclusive HYPACK tokens at $0.05 each. Use HYPE tokens to participate!
-              </p>
-              <div className="simple-progress">
-                <div className="progress-info">
-                  <span>Progress: 500 HYPE raised / 3000 HYPE goal</span>
-                  <span>16.67%</span>
-                </div>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{width: '16.67%'}}></div>
-                </div>
-              </div>
-              <div className="presale-cta">
-                <Link to="/presale" className="btn btn-primary">
-                  Join Presale Now
-                </Link>
-              </div>
-            </div>
-          </section>
 
           {/* Pack Opening Section */}
           <section className="pack-opening">
