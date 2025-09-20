@@ -810,9 +810,10 @@
     font-size: 1.5rem;
   }
   
-  /* Mobile Banner - Only hide on docs page to prevent white space */
-  .gitbook-page .banner-section {
-    display: none; /* Hide banner on mobile only for docs page */
+  /* Mobile Banner - Show banner on mobile for all pages including docs */
+  .banner-section {
+    display: block; /* Always show banner on mobile */
+    margin-bottom: 20px;
   }
   
   /* Remove extra margin when banner is hidden */
