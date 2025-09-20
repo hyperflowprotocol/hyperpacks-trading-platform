@@ -3,18 +3,26 @@ import { usePrivy, useWallets, useSendTransaction } from '@privy-io/react-auth';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Toast from '../components/Toast';
+import usePresaleStats from '../hooks/usePresaleStats';
 import '../styles/Presale.css';
 
 const Presale = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const { sendTransaction } = useSendTransaction();
+  // Use blockchain hook for real-time presale stats
+  const {
+    totalRaised,
+    progressPercentage,
+    realTimeBalance,
+    refresh: refreshPresaleStats,
+    TARGET_RAISE,
+    HYPACK_PER_HYPE
+  } = usePresaleStats();
+  
   const [hypeAmount, setHypeAmount] = useState(''); // Amount of HYPE tokens user wants to spend
   const [isLoading, setIsLoading] = useState(false);
-  const [realTimeBalance, setRealTimeBalance] = useState(0); // Real-time balance from contract
-  const [progressPercentage, setProgressPercentage] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
-  const [totalRaised, setTotalRaised] = useState(0); // Track total HYPE raised
   
   // Toast notification state
   const [toast, setToast] = useState({
@@ -38,7 +46,6 @@ const Presale = () => {
   // Presale configuration
   const TOKEN_PRICE = 0.0005; // $0.0005 per HYPACK token (matches docs)
   const CONTRACT_ADDRESS = '0x7b5C8C1D5e0032616cfB87e95E43641e2b08560a'; // Real contract address
-  const TARGET_RAISE = 3000; // Target: 3,000 HYPE
 
 
   const handleInputChange = (e) => {
@@ -47,53 +54,10 @@ const Presale = () => {
   };
 
 
-  // Load saved progress from localStorage and calculate progress
-  useEffect(() => {
-    // Function to update progress from localStorage
-    const updateProgressFromStorage = () => {
-      const BASELINE_RAISED = 500; // 500 HYPE baseline
-      const saved = localStorage.getItem('hyperpack-total-raised');
-      let total = saved ? parseFloat(saved) : BASELINE_RAISED;
-      
-      // Enforce baseline: if saved value is invalid or too low, reset to baseline
-      if (!Number.isFinite(total) || total < BASELINE_RAISED) {
-        total = BASELINE_RAISED;
-        localStorage.setItem('hyperpack-total-raised', total.toString());
-      }
-      
-      setTotalRaised(total);
-      
-      // Calculate progress percentage
-      const progress = Math.min((total / TARGET_RAISE) * 100, 100);
-      setProgressPercentage(progress);
-      
-      // Calculate total HYPACK tokens distributed using fixed rate: 1 HYPE = 108,000 HYPACK
-      const HYPACK_PER_HYPE = 108000;
-      const tokensDistributed = Math.floor(total * HYPACK_PER_HYPE);
-      setRealTimeBalance(tokensDistributed);
-    };
-
-    // Load initial progress
-    updateProgressFromStorage();
-
-    // Add event listener for cross-tab sync
-    const handleStorageChange = (e) => {
-      if (e.key === 'hyperpack-total-raised' && e.newValue !== null) {
-        updateProgressFromStorage();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // Cleanup event listener on unmount
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []); // Run once on mount to load saved progress
+  // Blockchain polling is handled by usePresaleStats hook
 
   // Calculate HYPACK tokens from HYPE amount - FIXED RATE: 1 HYPE = 108,000 HYPACK
   const hypeAmountNum = parseFloat(hypeAmount) || 0;
-  const HYPACK_PER_HYPE = 108000; // Fixed rate: 1 HYPE = 108,000 HYPACK tokens
   const tokenQuantity = Math.floor(hypeAmountNum * HYPACK_PER_HYPE); // HYPACK tokens they'll get
   const totalCostInHype = hypeAmountNum; // Total cost in HYPE tokens (same as input)
   const hypaTokensNeeded = hypeAmountNum > 0 ? hypeAmountNum.toFixed(6) : '0'; // HYPE amount user will spend
@@ -264,24 +228,11 @@ const Presale = () => {
       
       // TODO: In production, wait for transaction confirmation before updating progress
       // For demo purposes, update progress after a delay to simulate confirmation
-      setTimeout(() => {
-        // Update progress after simulated confirmation
-        const newTotal = totalRaised + hypeAmountNum;
-        setTotalRaised(newTotal);
+      setTimeout(async () => {
+        // Refresh blockchain data to get latest balance across all devices
+        await refreshPresaleStats();
         
-        // Save to localStorage
-        localStorage.setItem('hyperpack-total-raised', newTotal.toString());
-        
-        // Update progress percentage
-        const newProgress = Math.min((newTotal / TARGET_RAISE) * 100, 100);
-        setProgressPercentage(newProgress);
-        
-        // Update HYPACK tokens distributed using fixed rate
-        const HYPACK_PER_HYPE = 108000;
-        const tokensDistributed = Math.floor(newTotal * HYPACK_PER_HYPE);
-        setRealTimeBalance(tokensDistributed);
-        
-        showToast('Transaction confirmed! Progress updated.', 'success');
+        showToast('Transaction confirmed! Progress updated across all devices.', 'success');
       }, 3000); // 3 second delay to simulate confirmation wait
       
       // Reset form after success
