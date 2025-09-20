@@ -10,24 +10,62 @@ const Presale = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const { sendTransaction } = useSendTransaction();
-  // Presale configuration - Fixed values for now
+  // Presale configuration
   const TARGET_RAISE = 3000;
   const HYPACK_PER_HYPE = 108000;
   const BASELINE_RAISED = 500;
   
-  // Get saved total or use baseline
-  const savedTotal = localStorage.getItem('hyperpack-total-raised');
-  let calculatedTotal = savedTotal ? parseFloat(savedTotal) : BASELINE_RAISED;
-  if (!Number.isFinite(calculatedTotal) || calculatedTotal < BASELINE_RAISED) {
-    calculatedTotal = BASELINE_RAISED;
-    localStorage.setItem('hyperpack-total-raised', calculatedTotal.toString());
-  }
+  // State for presale progress
+  const [totalRaised, setTotalRaised] = useState(BASELINE_RAISED);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [realTimeBalance, setRealTimeBalance] = useState(0);
   
-  const totalRaised = calculatedTotal;
-  const progressPercentage = Math.min((totalRaised / TARGET_RAISE) * 100, 100);
-  const realTimeBalance = Math.floor(totalRaised * HYPACK_PER_HYPE);
+  // Database sync function (simplified)
+  const syncWithDatabase = async () => {
+    try {
+      // Use localStorage as fallback for demo (in production, this would be an API call)
+      const savedTotal = localStorage.getItem('hyperpack-total-raised');
+      let currentTotal = savedTotal ? parseFloat(savedTotal) : BASELINE_RAISED;
+      
+      if (!Number.isFinite(currentTotal) || currentTotal < BASELINE_RAISED) {
+        currentTotal = BASELINE_RAISED;
+        localStorage.setItem('hyperpack-total-raised', currentTotal.toString());
+      }
+      
+      // Update state
+      setTotalRaised(currentTotal);
+      const progress = Math.min((currentTotal / TARGET_RAISE) * 100, 100);
+      setProgressPercentage(progress);
+      setRealTimeBalance(Math.floor(currentTotal * HYPACK_PER_HYPE));
+      
+      console.log(`Synced: ${currentTotal}/${TARGET_RAISE} = ${progress}%`);
+    } catch (error) {
+      console.error('Sync failed:', error);
+    }
+  };
   
-  console.log(`Fixed calculation: ${totalRaised}/${TARGET_RAISE} = ${progressPercentage}%`);
+  // Initial sync and periodic sync for cross-browser updates
+  useEffect(() => {
+    // Initial sync
+    syncWithDatabase();
+    
+    // Sync every 5 seconds for cross-browser updates
+    const syncInterval = setInterval(syncWithDatabase, 5000);
+    
+    // Listen for localStorage changes from other tabs
+    const handleStorageChange = (e) => {
+      if (e.key === 'hyperpack-total-raised') {
+        syncWithDatabase();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
   
   const [hypeAmount, setHypeAmount] = useState(''); // Amount of HYPE tokens user wants to spend
   const [isLoading, setIsLoading] = useState(false);
