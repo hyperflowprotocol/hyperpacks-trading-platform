@@ -3,69 +3,24 @@ import { usePrivy, useWallets, useSendTransaction } from '@privy-io/react-auth';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Toast from '../components/Toast';
-import usePresaleStats from '../hooks/usePresaleStats';
+import usePresaleProgress from '../hooks/usePresaleProgress';
 import '../styles/Presale.css';
 
 const Presale = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const { sendTransaction } = useSendTransaction();
-  // Presale configuration
-  const TARGET_RAISE = 3000;
-  const HYPACK_PER_HYPE = 108000;
-  const BASELINE_RAISED = 500;
+  // Use database-backed hook for cross-browser sync
+  const {
+    totalRaised,
+    progressPercentage,
+    realTimeBalance,
+    updateProgress,
+    TARGET_RAISE,
+    HYPACK_PER_HYPE
+  } = usePresaleProgress();
   
-  // State for presale progress
-  const [totalRaised, setTotalRaised] = useState(BASELINE_RAISED);
-  const [progressPercentage, setProgressPercentage] = useState(0);
-  const [realTimeBalance, setRealTimeBalance] = useState(0);
-  
-  // Database sync function (simplified)
-  const syncWithDatabase = async () => {
-    try {
-      // Use localStorage as fallback for demo (in production, this would be an API call)
-      const savedTotal = localStorage.getItem('hyperpack-total-raised');
-      let currentTotal = savedTotal ? parseFloat(savedTotal) : BASELINE_RAISED;
-      
-      if (!Number.isFinite(currentTotal) || currentTotal < BASELINE_RAISED) {
-        currentTotal = BASELINE_RAISED;
-        localStorage.setItem('hyperpack-total-raised', currentTotal.toString());
-      }
-      
-      // Update state
-      setTotalRaised(currentTotal);
-      const progress = Math.min((currentTotal / TARGET_RAISE) * 100, 100);
-      setProgressPercentage(progress);
-      setRealTimeBalance(Math.floor(currentTotal * HYPACK_PER_HYPE));
-      
-      console.log(`Synced: ${currentTotal}/${TARGET_RAISE} = ${progress}%`);
-    } catch (error) {
-      console.error('Sync failed:', error);
-    }
-  };
-  
-  // Initial sync and periodic sync for cross-browser updates
-  useEffect(() => {
-    // Initial sync
-    syncWithDatabase();
-    
-    // Sync every 5 seconds for cross-browser updates
-    const syncInterval = setInterval(syncWithDatabase, 5000);
-    
-    // Listen for localStorage changes from other tabs
-    const handleStorageChange = (e) => {
-      if (e.key === 'hyperpack-total-raised') {
-        syncWithDatabase();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      clearInterval(syncInterval);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+  console.log(`Database sync: ${totalRaised}/${TARGET_RAISE} = ${progressPercentage.toFixed(2)}%`);
   
   const [hypeAmount, setHypeAmount] = useState(''); // Amount of HYPE tokens user wants to spend
   const [isLoading, setIsLoading] = useState(false);
@@ -275,14 +230,16 @@ const Presale = () => {
       
       // TODO: In production, wait for transaction confirmation before updating progress
       // For demo purposes, update progress after a delay to simulate confirmation
-      setTimeout(() => {
-        // Update localStorage for demo
-        const newTotal = totalRaised + hypeAmountNum;
-        localStorage.setItem('hyperpack-total-raised', newTotal.toString());
-        
-        showToast('Transaction confirmed! Progress updated.', 'success');
-        // Force page reload to show updated progress
-        window.location.reload();
+      setTimeout(async () => {
+        try {
+          // Update database with new purchase amount
+          await updateProgress(hypeAmountNum);
+          
+          showToast('Transaction confirmed! Progress updated across all devices.', 'success');
+        } catch (error) {
+          console.error('Failed to update progress:', error);
+          showToast('Transaction confirmed but progress update failed. Please refresh.', 'warning');
+        }
       }, 3000); // 3 second delay to simulate confirmation wait
       
       // Reset form after success
