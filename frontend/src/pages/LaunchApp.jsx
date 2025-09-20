@@ -93,6 +93,14 @@ const LaunchApp = () => {
       <main className="app-main">
         <div className="app-container">
           
+          {/* Banner Section */}
+          <section className="banner-section">
+            <img 
+              src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeihojrsm66vtxjqia6skjl6jb6rnw2avrvejaehpv52leyafk5awc4" 
+              alt="HyperPack Banner" 
+              className="banner-image"
+            />
+          </section>
 
           {/* Pack Opening Section */}
           <section className="pack-opening">
