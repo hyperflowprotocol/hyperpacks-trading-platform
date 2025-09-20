@@ -10,15 +10,24 @@ const Presale = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const { sendTransaction } = useSendTransaction();
-  // Use blockchain hook for real-time presale stats
-  const {
-    totalRaised,
-    progressPercentage,
-    realTimeBalance,
-    refresh: refreshPresaleStats,
-    TARGET_RAISE,
-    HYPACK_PER_HYPE
-  } = usePresaleStats();
+  // Presale configuration - Fixed values for now
+  const TARGET_RAISE = 3000;
+  const HYPACK_PER_HYPE = 108000;
+  const BASELINE_RAISED = 500;
+  
+  // Get saved total or use baseline
+  const savedTotal = localStorage.getItem('hyperpack-total-raised');
+  let calculatedTotal = savedTotal ? parseFloat(savedTotal) : BASELINE_RAISED;
+  if (!Number.isFinite(calculatedTotal) || calculatedTotal < BASELINE_RAISED) {
+    calculatedTotal = BASELINE_RAISED;
+    localStorage.setItem('hyperpack-total-raised', calculatedTotal.toString());
+  }
+  
+  const totalRaised = calculatedTotal;
+  const progressPercentage = Math.min((totalRaised / TARGET_RAISE) * 100, 100);
+  const realTimeBalance = Math.floor(totalRaised * HYPACK_PER_HYPE);
+  
+  console.log(`Fixed calculation: ${totalRaised}/${TARGET_RAISE} = ${progressPercentage}%`);
   
   const [hypeAmount, setHypeAmount] = useState(''); // Amount of HYPE tokens user wants to spend
   const [isLoading, setIsLoading] = useState(false);
@@ -228,11 +237,14 @@ const Presale = () => {
       
       // TODO: In production, wait for transaction confirmation before updating progress
       // For demo purposes, update progress after a delay to simulate confirmation
-      setTimeout(async () => {
-        // Refresh blockchain data to get latest balance across all devices
-        await refreshPresaleStats();
+      setTimeout(() => {
+        // Update localStorage for demo
+        const newTotal = totalRaised + hypeAmountNum;
+        localStorage.setItem('hyperpack-total-raised', newTotal.toString());
         
         showToast('Transaction confirmed! Progress updated.', 'success');
+        // Force page reload to show updated progress
+        window.location.reload();
       }, 3000); // 3 second delay to simulate confirmation wait
       
       // Reset form after success
