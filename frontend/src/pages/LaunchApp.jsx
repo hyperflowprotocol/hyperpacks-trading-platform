@@ -4,16 +4,56 @@ import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import '../styles/LaunchApp.css';
 
+// Pack Types
+const PACK_TYPES = {
+  COMMON: 'common',
+  RARE: 'rare', 
+  EPIC: 'epic',
+  LEGENDARY: 'legendary'
+};
+
+// Simple Pack Opening Modal Component
+const PackOpenModal = ({ isOpen, onClose, packType, onPackOpened }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="pack-modal" onClick={(e) => e.stopPropagation()}>
+        <h3>Opening {packType} Pack!</h3>
+        <p>Pack opening animation would go here...</p>
+        <button onClick={onClose} className="btn btn-primary">Close</button>
+      </div>
+    </div>
+  );
+};
+
 const LaunchApp = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const [showToast, setShowToast] = useState(false);
-
-  const openPack = () => {
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-    }, 2000); // Hide after 2 seconds
+  const [isPackModalOpen, setIsPackModalOpen] = useState(false);
+  const [selectedPackType, setSelectedPackType] = useState(null);
+  
+  const openPack = (packType) => {
+    if (!authenticated) {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+    setSelectedPackType(packType);
+    setIsPackModalOpen(true);
   };
+  
+  const handleModalClose = () => {
+    setIsPackModalOpen(false);
+    setSelectedPackType(null);
+  };
+  
+  const handlePackOpened = () => {
+    console.log('Pack opened successfully!');
+    handleModalClose();
+  };
+  
+
 
 
 
@@ -62,6 +102,29 @@ const LaunchApp = () => {
             />
           </section>
 
+          {/* Presale Progress Section */}
+          <section className="presale-progress">
+            <div className="section-card">
+              <h2 className="brand-gradient-text">HYPACK Token Presale</h2>
+              <p className="presale-description">
+                Join the presale for exclusive HYPACK tokens at $0.05 each. Use HYPE tokens to participate!
+              </p>
+              <div className="simple-progress">
+                <div className="progress-info">
+                  <span>Progress: 500 HYPE raised / 3000 HYPE goal</span>
+                  <span>16.67%</span>
+                </div>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{width: '16.67%'}}></div>
+                </div>
+              </div>
+              <div className="presale-cta">
+                <Link to="/presale" className="btn btn-primary">
+                  Join Presale Now
+                </Link>
+              </div>
+            </div>
+          </section>
 
           {/* Pack Opening Section */}
           <section className="pack-opening">
@@ -73,70 +136,70 @@ const LaunchApp = () => {
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Common Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.COMMON)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Epic Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Legendary Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Mythic Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Rare Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.RARE)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Ultra Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Secret Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Premium Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Master Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Champion Pack" />
                   </div>
 
-                  <button className="btn-pack" onClick={openPack}>Open Pack</button>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
                 </div>
               </div>
             </div>
@@ -149,10 +212,18 @@ const LaunchApp = () => {
 
       <Footer />
 
-      {/* Toast Notification for Pack Opening */}
+      {/* Pack Opening Modal */}
+      <PackOpenModal
+        isOpen={isPackModalOpen}
+        onClose={handleModalClose}
+        packType={selectedPackType ? Object.keys(PACK_TYPES).find(key => PACK_TYPES[key] === selectedPackType) : 'Common'}
+        onPackOpened={handlePackOpened}
+      />
+
+      {/* Toast Notification for Authentication */}
       {showToast && (
         <div className="toast">
-          Coming Soon
+          Please connect your wallet to open packs
         </div>
       )}
 
