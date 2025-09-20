@@ -80,10 +80,12 @@ const usePresaleStats = () => {
       // Apply baseline (minimum of 500 HYPE for display purposes)
       const effectiveTotal = Math.max(balanceHype, BASELINE_RAISED);
       
+      // Calculate progress percentage BEFORE setting state
+      const progress = Math.min((effectiveTotal / TARGET_RAISE) * 100, 100);
+      console.log(`Progress calculation: ${effectiveTotal}/${TARGET_RAISE} = ${progress}%`);
+      
       // Update all derived values
       setTotalRaised(effectiveTotal);
-      
-      const progress = Math.min((effectiveTotal / TARGET_RAISE) * 100, 100);
       setProgressPercentage(progress);
       
       const tokensDistributed = Math.floor(effectiveTotal * HYPACK_PER_HYPE);
@@ -104,8 +106,11 @@ const usePresaleStats = () => {
       const cached = localStorage.getItem('hyperpack-total-raised');
       if (cached) {
         const cachedTotal = Math.max(parseFloat(cached), BASELINE_RAISED);
+        const cachedProgress = Math.min((cachedTotal / TARGET_RAISE) * 100, 100);
+        console.log(`Cached progress: ${cachedTotal}/${TARGET_RAISE} = ${cachedProgress}%`);
+        
         setTotalRaised(cachedTotal);
-        setProgressPercentage(Math.min((cachedTotal / TARGET_RAISE) * 100, 100));
+        setProgressPercentage(cachedProgress);
         setRealTimeBalance(Math.floor(cachedTotal * HYPACK_PER_HYPE));
         
         console.log('Using cached balance:', cachedTotal);
