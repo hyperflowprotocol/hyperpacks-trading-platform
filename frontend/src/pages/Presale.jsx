@@ -51,8 +51,16 @@ const Presale = () => {
   useEffect(() => {
     // Function to update progress from localStorage
     const updateProgressFromStorage = () => {
-      const savedTotal = localStorage.getItem('hyperpack-total-raised');
-      const total = savedTotal ? parseFloat(savedTotal) : 500; // Default to 500 HYPE raised
+      const BASELINE_RAISED = 500; // 500 HYPE baseline
+      const saved = localStorage.getItem('hyperpack-total-raised');
+      let total = saved ? parseFloat(saved) : BASELINE_RAISED;
+      
+      // Enforce baseline: if saved value is invalid or too low, reset to baseline
+      if (!Number.isFinite(total) || total < BASELINE_RAISED) {
+        total = BASELINE_RAISED;
+        localStorage.setItem('hyperpack-total-raised', total.toString());
+      }
+      
       setTotalRaised(total);
       
       // Calculate progress percentage
