@@ -52,7 +52,7 @@ const Presale = () => {
     // Function to update progress from localStorage
     const updateProgressFromStorage = () => {
       const savedTotal = localStorage.getItem('hyperpack-total-raised');
-      const total = savedTotal ? parseFloat(savedTotal) : 0;
+      const total = savedTotal ? parseFloat(savedTotal) : 500; // Default to 500 HYPE raised
       setTotalRaised(total);
       
       // Calculate progress percentage
