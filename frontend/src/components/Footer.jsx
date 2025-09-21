@@ -18,6 +18,9 @@ const Footer = () => {
           <a href="https://x.com/hypack_xyz" target="_blank" rel="noopener noreferrer" className="social-link twitter-icon">
             X
           </a>
+          <a href="https://t.me/HyperPack_xyz" target="_blank" rel="noopener noreferrer" className="social-link telegram-icon">
+            Telegram
+          </a>
           <a href="#" onClick={handleDiscordClick} className="social-link discord-icon">
             Discord
           </a>
