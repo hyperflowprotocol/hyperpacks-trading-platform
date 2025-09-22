@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 
 const usePresaleProgress = () => {
   const [totalRaised, setTotalRaised] = useState(535.65);
-  const [progressPercentage, setProgressPercentage] = useState(17.86);
+  const [progressPercentage, setProgressPercentage] = useState(53.57);
   const [realTimeBalance, setRealTimeBalance] = useState(57870200);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   
-  const TARGET_RAISE = 3000;
+  const TARGET_RAISE = 1000;
   const HYPACK_PER_HYPE = 108000;
 
   // Get API base URL
