@@ -7,7 +7,7 @@ export const PRESALE_CONFIG = {
   RPC_URL: 'https://rpc.hyperevmchain.org',
   
   // Presale economics
-  TARGET_RAISE: 3000, // Total HYPE target
+  TARGET_RAISE: 1000, // Total HYPE target
   HYPACK_PER_HYPE: 108000, // 1 HYPE = 108,000 HYPACK
   TOKEN_PRICE_USD: 0.0005, // $0.0005 per HYPACK
   
