@@ -1,13 +1,93 @@
-// Simple Vercel API function for cross-browser presale sync
-import { Pool } from 'pg';
+// Real blockchain-based presale API with on-chain verification
+import fetch from 'node-fetch';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// Presale configuration
+const PRESALE_CONFIG = {
+  PRESALE_WALLET_ADDRESS: '0x7b5C8C1D5e0032616cfB87e95E43641e2b08560a',
+  RPC_URL: 'https://rpc.hyperevmchain.org',
+  TARGET_RAISE: 3000,
+  HYPACK_PER_HYPE: 108000,
+  BASELINE_AMOUNT: 535.65 // Display minimum
+};
+
+// Get wallet balance from HyperEVM blockchain
+async function getWalletBalance(address) {
+  try {
+    const response = await fetch(PRESALE_CONFIG.RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_getBalance',
+        params: [address, 'latest'],
+        id: 1
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(`RPC Error: ${data.error.message}`);
+    }
+    
+    // Convert from wei to HYPE (18 decimals)
+    const balanceWei = BigInt(data.result);
+    const balanceHYPE = Number(balanceWei) / Math.pow(10, 18);
+    
+    return balanceHYPE;
+  } catch (error) {
+    console.error('Failed to fetch wallet balance:', error);
+    throw error;
+  }
+}
+
+// Verify transaction on blockchain
+async function verifyTransaction(txHash) {
+  try {
+    const response = await fetch(PRESALE_CONFIG.RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_getTransactionByHash',
+        params: [txHash],
+        id: 1
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.error || !data.result) {
+      return null;
+    }
+    
+    const tx = data.result;
+    
+    // Verify transaction is to presale wallet
+    if (tx.to?.toLowerCase() !== PRESALE_CONFIG.PRESALE_WALLET_ADDRESS.toLowerCase()) {
+      return null;
+    }
+    
+    // Convert value from wei to HYPE
+    const valueWei = BigInt(tx.value);
+    const valueHYPE = Number(valueWei) / Math.pow(10, 18);
+    
+    return {
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      value: valueHYPE,
+      blockNumber: tx.blockNumber
+    };
+    
+  } catch (error) {
+    console.error('Failed to verify transaction:', error);
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
-  // Enable CORS
+  // Enable CORS for frontend
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,83 +98,65 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get current presale progress
-      const result = await pool.query(`
-        SELECT total_raised, updated_at 
-        FROM presale_progress 
-        ORDER BY updated_at DESC 
-        LIMIT 1
-      `);
+      // Get real-time progress from blockchain
+      const walletBalance = await getWalletBalance(PRESALE_CONFIG.PRESALE_WALLET_ADDRESS);
       
-      let totalRaised = 500.0; // Default baseline
+      // Use baseline if balance is too low (for display purposes)
+      const totalRaised = Math.max(walletBalance, PRESALE_CONFIG.BASELINE_AMOUNT);
       
-      if (result.rows.length > 0) {
-        totalRaised = parseFloat(result.rows[0].total_raised);
-      } else {
-        // Insert initial record
-        await pool.query('INSERT INTO presale_progress (total_raised) VALUES ($1)', [totalRaised]);
-      }
-      
-      // Calculate progress
-      const TARGET_RAISE = 3000;
-      const HYPACK_PER_HYPE = 108000;
-      const progressPercentage = Math.min((totalRaised / TARGET_RAISE) * 100, 100);
-      const realTimeBalance = Math.floor(totalRaised * HYPACK_PER_HYPE);
+      const progressPercentage = Math.min((totalRaised / PRESALE_CONFIG.TARGET_RAISE) * 100, 100);
+      const realTimeBalance = Math.floor(totalRaised * PRESALE_CONFIG.HYPACK_PER_HYPE);
       
       return res.status(200).json({
         success: true,
         data: {
           total_raised: totalRaised,
-          target_raise: TARGET_RAISE,
+          wallet_balance: walletBalance,
+          target_raise: PRESALE_CONFIG.TARGET_RAISE,
           progress_percentage: progressPercentage,
-          real_time_balance: realTimeBalance
+          real_time_balance: realTimeBalance,
+          source: 'blockchain'
         }
       });
       
     } else if (req.method === 'POST') {
-      // Update presale progress
-      const { amount } = req.body;
+      // Verify transaction instead of blindly adding amounts
+      const { tx_hash } = req.body;
       
-      if (!amount || amount <= 0) {
+      if (!tx_hash) {
         return res.status(400).json({
           success: false,
-          error: 'Valid amount required'
+          error: 'Transaction hash required for verification'
         });
       }
       
-      // Get current total
-      const currentResult = await pool.query(`
-        SELECT total_raised 
-        FROM presale_progress 
-        ORDER BY updated_at DESC 
-        LIMIT 1
-      `);
+      // Verify the transaction
+      const transaction = await verifyTransaction(tx_hash);
       
-      let currentTotal = 500.0;
-      if (currentResult.rows.length > 0) {
-        currentTotal = parseFloat(currentResult.rows[0].total_raised);
+      if (!transaction) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction not found or invalid'
+        });
       }
       
-      // Add new amount
-      const newTotal = currentTotal + parseFloat(amount);
+      // Get updated balance after transaction
+      const walletBalance = await getWalletBalance(PRESALE_CONFIG.PRESALE_WALLET_ADDRESS);
+      const totalRaised = Math.max(walletBalance, PRESALE_CONFIG.BASELINE_AMOUNT);
       
-      // Insert new record
-      await pool.query('INSERT INTO presale_progress (total_raised) VALUES ($1)', [newTotal]);
-      
-      // Calculate new progress
-      const TARGET_RAISE = 3000;
-      const HYPACK_PER_HYPE = 108000;
-      const progressPercentage = Math.min((newTotal / TARGET_RAISE) * 100, 100);
-      const realTimeBalance = Math.floor(newTotal * HYPACK_PER_HYPE);
+      const progressPercentage = Math.min((totalRaised / PRESALE_CONFIG.TARGET_RAISE) * 100, 100);
+      const realTimeBalance = Math.floor(totalRaised * PRESALE_CONFIG.HYPACK_PER_HYPE);
       
       return res.status(200).json({
         success: true,
         data: {
-          total_raised: newTotal,
-          target_raise: TARGET_RAISE,
+          total_raised: totalRaised,
+          wallet_balance: walletBalance,
+          target_raise: PRESALE_CONFIG.TARGET_RAISE,
           progress_percentage: progressPercentage,
           real_time_balance: realTimeBalance,
-          amount_added: parseFloat(amount)
+          verified_transaction: transaction,
+          source: 'blockchain'
         }
       });
       
@@ -106,10 +168,23 @@ export default async function handler(req, res) {
     }
     
   } catch (error) {
-    console.error('Database error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Database error'
+    console.error('Blockchain API error:', error);
+    
+    // Fallback to baseline on error
+    const totalRaised = PRESALE_CONFIG.BASELINE_AMOUNT;
+    const progressPercentage = Math.min((totalRaised / PRESALE_CONFIG.TARGET_RAISE) * 100, 100);
+    const realTimeBalance = Math.floor(totalRaised * PRESALE_CONFIG.HYPACK_PER_HYPE);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        total_raised: totalRaised,
+        target_raise: PRESALE_CONFIG.TARGET_RAISE,
+        progress_percentage: progressPercentage,
+        real_time_balance: realTimeBalance,
+        source: 'fallback',
+        error: error.message
+      }
     });
   }
 }
