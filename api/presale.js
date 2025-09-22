@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 const PRESALE_CONFIG = {
   PRESALE_WALLET_ADDRESS: '0x7b5C8C1D5e0032616cfB87e95E43641e2b08560a',
   RPC_URL: 'https://rpc.hyperevmchain.org',
-  TARGET_RAISE: 3000,
+  TARGET_RAISE: 1000,
   HYPACK_PER_HYPE: 108000,
   BASELINE_AMOUNT: 535.65 // Display minimum
 };
