@@ -12,16 +12,160 @@ const PACK_TYPES = {
   LEGENDARY: 'legendary'
 };
 
-// Simple Pack Opening Modal Component
+// Pack Tearing Animation Component
 const PackOpenModal = ({ isOpen, onClose, packType, onPackOpened }) => {
+  const [animationStep, setAnimationStep] = useState('ready'); // ready, tearing, cards, result
+  const [openedCards, setOpenedCards] = useState([]);
+
+  // Mock card data for demonstration
+  const generateMockCards = () => {
+    const cardNames = ['Fire Dragon', 'Ice Wizard', 'Lightning Bolt', 'Healing Potion', 'Shadow Assassin', 'Golden Shield', 'Crystal Orb', 'Thunder Strike'];
+    const rarities = ['common', 'rare', 'epic', 'legendary'];
+    const cards = [];
+    
+    for (let i = 0; i < Math.floor(Math.random() * 4) + 5; i++) { // 5-8 cards
+      cards.push({
+        id: Math.random().toString(36).substr(2, 9),
+        name: cardNames[Math.floor(Math.random() * cardNames.length)],
+        rarity: rarities[Math.floor(Math.random() * rarities.length)],
+        image: 'https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4'
+      });
+    }
+    return cards;
+  };
+
+  const startPackOpening = () => {
+    setAnimationStep('tearing');
+    
+    // After tearing animation (2 seconds), show cards
+    setTimeout(() => {
+      const cards = generateMockCards();
+      setOpenedCards(cards);
+      setAnimationStep('cards');
+      
+      // After cards animation (3 seconds), show result
+      setTimeout(() => {
+        setAnimationStep('result');
+        onPackOpened?.(cards);
+      }, 3000);
+    }, 2000);
+  };
+
+  const handleClose = () => {
+    setAnimationStep('ready');
+    setOpenedCards([]);
+    onClose();
+  };
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setAnimationStep('ready');
+      setOpenedCards([]);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
   
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="pack-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Opening {packType} Pack!</h3>
-        <p>Pack opening animation would go here...</p>
-        <button onClick={onClose} className="btn btn-primary">Close</button>
+    <div className="pack-tear-modal" onClick={(e) => e.target === e.currentTarget && handleClose()}>
+      <div className="pack-tear-content">
+        {/* Modal Header */}
+        <div className="pack-modal-header">
+          <h2 className="pack-modal-title">Opening {packType} Pack</h2>
+          <button className="pack-modal-close" onClick={handleClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Pack Animation Area */}
+        <div className="pack-tear-animation">
+          {animationStep === 'ready' && (
+            <div className="pack-ready">
+              <div className="pack-image-container">
+                <img 
+                  src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" 
+                  alt={`${packType} Pack`}
+                  className="pack-image-whole"
+                />
+                <div className="pack-glow"></div>
+              </div>
+              <button className="tear-pack-btn" onClick={startPackOpening}>
+                Click to Tear Open! 🎁
+              </button>
+            </div>
+          )}
+
+          {animationStep === 'tearing' && (
+            <div className="pack-tearing">
+              <div className="pack-left-half">
+                <img 
+                  src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" 
+                  alt="Pack Left"
+                  className="pack-half-image"
+                />
+              </div>
+              <div className="pack-right-half">
+                <img 
+                  src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" 
+                  alt="Pack Right"
+                  className="pack-half-image"
+                />
+              </div>
+              <div className="tearing-effect">
+                <div className="tear-line"></div>
+                <div className="sparks"></div>
+              </div>
+            </div>
+          )}
+
+          {animationStep === 'cards' && (
+            <div className="cards-falling">
+              {openedCards.map((card, index) => (
+                <div 
+                  key={card.id} 
+                  className={`falling-card rarity-${card.rarity}`}
+                  style={{ 
+                    '--delay': `${index * 0.2}s`,
+                    '--x-offset': `${(index - openedCards.length/2) * 60}px`
+                  }}
+                >
+                  <img src={card.image} alt={card.name} />
+                  <div className="card-info">
+                    <div className="card-name">{card.name}</div>
+                    <div className={`card-rarity rarity-${card.rarity}`}>{card.rarity}</div>
+                  </div>
+                </div>
+              ))}
+              <div className="card-sparkles"></div>
+            </div>
+          )}
+
+          {animationStep === 'result' && (
+            <div className="pack-result">
+              <div className="result-title">🎉 Pack Opened Successfully!</div>
+              <div className="opened-cards-grid">
+                {openedCards.map((card) => (
+                  <div key={card.id} className={`result-card rarity-${card.rarity}`}>
+                    <img src={card.image} alt={card.name} />
+                    <div className="card-details">
+                      <div className="card-name">{card.name}</div>
+                      <div className={`card-rarity rarity-${card.rarity}`}>{card.rarity}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="result-stats">
+                <p>You opened {openedCards.length} cards!</p>
+                <p>Rarest: {openedCards.find(c => c.rarity === 'legendary')?.name || openedCards.find(c => c.rarity === 'epic')?.name || 'Rare card'}</p>
+              </div>
+              <button className="btn-secondary" onClick={handleClose}>
+                Close
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
