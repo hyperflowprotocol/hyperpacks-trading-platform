@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const usePresaleProgress = () => {
-  const [totalRaised, setTotalRaised] = useState(589.44);
-  const [progressPercentage, setProgressPercentage] = useState(58.94);
-  const [realTimeBalance, setRealTimeBalance] = useState(63659520);
+  const [totalRaised, setTotalRaised] = useState(593);
+  const [progressPercentage, setProgressPercentage] = useState(59.3);
+  const [realTimeBalance, setRealTimeBalance] = useState(64044000);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   
@@ -62,7 +62,7 @@ const usePresaleProgress = () => {
       // Fallback to localStorage
       const cached = localStorage.getItem('hyperpack-total-raised');
       if (cached) {
-        const cachedTotal = Math.max(parseFloat(cached), 589.44);
+        const cachedTotal = Math.max(parseFloat(cached), 593);
         const cachedProgress = Math.min((cachedTotal / TARGET_RAISE) * 100, 100);
         const cachedBalance = Math.floor(cachedTotal * HYPACK_PER_HYPE);
         
@@ -75,7 +75,7 @@ const usePresaleProgress = () => {
       }
       
       // Final fallback to baseline
-      const baseline = 589.44;
+      const baseline = 593;
       const baselineProgress = Math.min((baseline / TARGET_RAISE) * 100, 100);
       const baselineBalance = Math.floor(baseline * HYPACK_PER_HYPE);
       
