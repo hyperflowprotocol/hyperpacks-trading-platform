@@ -16,7 +16,7 @@ export const PRESALE_CONFIG = {
   MAX_PURCHASE_HYPE: 100, // Maximum 100 HYPE per transaction
   
   // Baseline for display (minimum to show progress)
-  BASELINE_AMOUNT: 615, // Starting display amount in HYPE
+  BASELINE_AMOUNT: 620, // Starting display amount in HYPE
   
   // Network configuration
   NETWORK_CONFIG: {
