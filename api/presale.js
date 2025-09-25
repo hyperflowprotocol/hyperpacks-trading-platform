@@ -7,7 +7,7 @@ const PRESALE_CONFIG = {
   RPC_URL: 'https://rpc.hyperevmchain.org',
   TARGET_RAISE: 1000,
   HYPACK_PER_HYPE: 108000,
-  BASELINE_AMOUNT: 629 // Display minimum
+  BASELINE_AMOUNT: 635 // Display minimum
 };
 
 // Get wallet balance from HyperEVM blockchain
