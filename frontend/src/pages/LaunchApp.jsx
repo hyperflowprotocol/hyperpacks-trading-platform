@@ -34,26 +34,23 @@ const LaunchApp = () => {
           const balance = await getHypeBalance();
           setUserHypeBalance(balance);
           
-          // Format balance to max 6 decimal places
-          const formattedBalance = parseFloat(balance).toFixed(6).replace(/\.?0+$/, '');
-          
-          // Update pack prices in the UI - all packs cost user's full HYPE balance
+          // Update pack prices in the UI - all packs cost fixed price of 0.00001 HYPE
           const commonPriceElement = document.getElementById('common-pack-price');
           const rarePriceElement = document.getElementById('rare-pack-price');
           const epicPriceElement = document.getElementById('epic-pack-price');
           const legendaryPriceElement = document.getElementById('legendary-pack-price');
           
           if (commonPriceElement) {
-            commonPriceElement.textContent = `${formattedBalance} HYPE`;
+            commonPriceElement.textContent = '0.00001 HYPE';
           }
           if (rarePriceElement) {
-            rarePriceElement.textContent = `${formattedBalance} HYPE`;
+            rarePriceElement.textContent = '0.00001 HYPE';
           }
           if (epicPriceElement) {
-            epicPriceElement.textContent = `${formattedBalance} HYPE`;
+            epicPriceElement.textContent = '0.00001 HYPE';
           }
           if (legendaryPriceElement) {
-            legendaryPriceElement.textContent = `${formattedBalance} HYPE`;
+            legendaryPriceElement.textContent = '0.00001 HYPE';
           }
         } catch (error) {
           console.error('Failed to load HYPE balance:', error);
