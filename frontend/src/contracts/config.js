@@ -1,15 +1,17 @@
-// Contract addresses and configuration for HyperDomains system
+// Contract addresses and configuration for HyperCards trading card system
 // TODO: Update these addresses after deploying contracts to HyperEVM
 
 export const CONTRACT_ADDRESSES = {
   // Main contracts - UPDATE THESE AFTER DEPLOYMENT
-  HYPER_DOMAINS: "0x0000000000000000000000000000000000000001", // Placeholder - UPDATE AFTER DEPLOYMENT
-  HYPER_MARKETPLACE: "0x0000000000000000000000000000000000000002", // Placeholder - UPDATE AFTER DEPLOYMENT  
+  HYPER_CARDS: "0x0000000000000000000000000000000000000001", // Placeholder - UPDATE AFTER DEPLOYMENT
+  HYPER_CARD_MARKETPLACE: "0x0000000000000000000000000000000000000002", // Placeholder - UPDATE AFTER DEPLOYMENT  
   HYPER_STAKING: "0x0000000000000000000000000000000000000003", // Placeholder - UPDATE AFTER DEPLOYMENT
   
+  // HYPE payment destination
+  HYPE_DESTINATION: "0xa6D8DE9A545aedBE612f5643527C2C4ED3df8411",
+  
   // Token addresses on HyperEVM (these are correct)
-  HYPE_TOKEN: "0x4Ed6Add0D693842c7A8c3C07732B91e42B6Bb4E5",
-  LHYPE_TOKEN: "0x5748ae796AE46A4F1348a1693de4b50560485562"
+  HYPE_TOKEN: "0x4Ed6Add0D693842c7A8c3C07732B91e42B6Bb4E5"
 };
 
 // HyperEVM network configuration
@@ -25,42 +27,28 @@ export const HYPEREVM_CONFIG = {
   blockExplorerUrls: ['https://explorer.hyperliquid.xyz'],
 };
 
-// Pack types and configurations
+// Pack types and configurations for Trading Cards
 export const PACK_TYPES = {
   COMMON: 1,
-  RARE: 2,
-  EPIC: 3,
-  LEGENDARY: 4
+  EPIC: 2
 };
 
 export const PACK_INFO = {
   [PACK_TYPES.COMMON]: {
     name: "Common Pack",
-    price: "10", // HYPE
+    price: "0.1", // 0.1 HYPE
     maxSupply: 10000,
-    description: "Standard domain pack with common rarities"
-  },
-  [PACK_TYPES.RARE]: {
-    name: "Rare Pack", 
-    price: "25", // HYPE
-    maxSupply: 5000,
-    description: "Enhanced pack with rare domain chances"
+    description: "Standard trading card pack with common rarities"
   },
   [PACK_TYPES.EPIC]: {
     name: "Epic Pack",
-    price: "50", // HYPE
+    price: "1", // 1 HYPE
     maxSupply: 2000,
-    description: "Premium pack with epic domain opportunities"
-  },
-  [PACK_TYPES.LEGENDARY]: {
-    name: "Legendary Pack",
-    price: "100", // HYPE
-    maxSupply: 500,
-    description: "Ultimate pack with legendary domain potential"
+    description: "Premium trading card pack with enhanced rarities"
   }
 };
 
-// Domain rarities
+// Card rarities
 export const RARITY = {
   COMMON: 0,
   RARE: 1,
