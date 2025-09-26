@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import IpfsMedia from './IpfsMedia';
 import { useHyperCards } from '../hooks/useHyperCards';
-
-const PACK_OPENING_ANIMATION_HASH = 'bafybeidregjjs577tozk7nw3mod3kov24wy54k2cqjtkuh6556ccnsft6u';
 
 const PackOpenModal = ({ 
   isOpen, 
@@ -11,8 +8,6 @@ const PackOpenModal = ({
   onPackOpened 
 }) => {
   const [currentStep, setCurrentStep] = useState('loading');
-  const [animationLoaded, setAnimationLoaded] = useState(false);
-  const [showAnimation, setShowAnimation] = useState(false);
   const [packResult, setPackResult] = useState(null);
   const [error, setError] = useState(null);
   const [blockCounter, setBlockCounter] = useState(0);
@@ -116,8 +111,6 @@ const PackOpenModal = ({
   useEffect(() => {
     if (isOpen) {
       setCurrentStep('loading');
-      setAnimationLoaded(false);
-      setShowAnimation(false);
       setPackResult(null);
       setError(null);
       setBlockCounter(0);
@@ -134,23 +127,6 @@ const PackOpenModal = ({
     }
   }, [currentStep]);
 
-  // Handle animation load (optional now)
-  const handleAnimationLoaded = () => {
-    setAnimationLoaded(true);
-  };
-
-  // Handle animation error (don't fail the whole process)
-  const handleAnimationError = (error) => {
-    console.warn('Animation loading failed, but continuing pack opening:', error);
-    setAnimationLoaded(true); // Mark as loaded even if failed
-  };
-
-  // Handle animation ended
-  const handleAnimationEnded = () => {
-    // Animation completed, real pack opening should have already set the result
-    // No need to do anything here since realPackOpening handles the result
-    console.log('Pack opening animation completed');
-  };
 
   // Get step status
   const getStepStatus = (stepId) => {
@@ -165,7 +141,6 @@ const PackOpenModal = ({
 
   // Handle close
   const handleClose = () => {
-    setShowAnimation(false);
     onClose();
   };
 
@@ -191,33 +166,12 @@ const PackOpenModal = ({
           </button>
         </div>
 
-        {/* Animation Container */}
+        {/* Animation Container - Simplified */}
         <div className="pack-animation-container">
-          {(currentStep === 'animation' && showAnimation) ? (
-            <IpfsMedia
-              ipfsHash={PACK_OPENING_ANIMATION_HASH}
-              alt="Pack Opening Animation"
-              className="pack-opening-animation"
-              autoPlay={true}
-              muted={true}
-              loop={false}
-              onLoaded={handleAnimationLoaded}
-              onError={handleAnimationError}
-              onEnded={handleAnimationEnded}
-            />
-          ) : (
-            <IpfsMedia
-              ipfsHash={PACK_OPENING_ANIMATION_HASH}
-              alt="Pack Opening Animation"
-              className="pack-opening-animation"
-              autoPlay={false}
-              muted={true}
-              loop={false}
-              onLoaded={handleAnimationLoaded}
-              onError={handleAnimationError}
-              style={{ opacity: 0.3 }}
-            />
-          )}
+          <div className="pack-opening-placeholder">
+            <div className="pack-opening-icon">🎁</div>
+            <p>Opening your pack...</p>
+          </div>
         </div>
 
         {/* Progress Steps */}

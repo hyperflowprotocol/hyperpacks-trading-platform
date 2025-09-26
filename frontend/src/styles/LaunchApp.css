@@ -1408,4 +1408,30 @@
     padding: 12px 24px;
     font-size: 16px;
   }
+}.pack-opening-placeholder {
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.pack-opening-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: bounce 1s infinite;
+}
+
+.pack-opening-placeholder p {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
 }
