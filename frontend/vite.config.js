@@ -2,22 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [
-    react(),
-    {
-      name: 'fix-viem-sourcemaps',
-      configureServer(server) {
-        server.middlewares.use('/node_modules', (req, res, next) => {
-          if (req.url && req.url.includes('viem/_esm/') && req.url.endsWith('.js.map')) {
-            res.statusCode = 404;
-            res.end('Not found');
-            return;
-          }
-          next();
-        });
-      }
-    }
-  ],
+  plugins: [react()],
   server: {
     host: '0.0.0.0',
     port: Number(process.env.PORT) || 5000,
@@ -29,6 +14,21 @@ export default defineConfig({
     global: 'globalThis',
   },
   build: {
-    sourcemap: false
+    sourcemap: false,
+    chunkSizeWarningLimit: 3000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          wallet: ['@privy-io/react-auth', 'ethers']
+        }
+      }
+    }
+  },
+  resolve: {
+    dedupe: ['react', 'react-dom', 'styled-components'],
+    alias: {
+      '@assets': new URL('./attached_assets', import.meta.url).pathname
+    }
   }
 })
