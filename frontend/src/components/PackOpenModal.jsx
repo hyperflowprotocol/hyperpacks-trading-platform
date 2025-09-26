@@ -124,26 +124,25 @@ const PackOpenModal = ({
     }
   }, [isOpen]);
 
-  // Start pack opening once animation is loaded
+  // Start pack opening immediately, don't wait for animation
   useEffect(() => {
-    if (animationLoaded && currentStep === 'loading') {
-      // Small delay to show loading completed
+    if (currentStep === 'loading') {
+      // Small delay then start pack opening regardless of animation
       setTimeout(() => {
         realPackOpening();
-      }, 500);
+      }, 1000);
     }
-  }, [animationLoaded, currentStep]);
+  }, [currentStep]);
 
-  // Handle animation load
+  // Handle animation load (optional now)
   const handleAnimationLoaded = () => {
     setAnimationLoaded(true);
   };
 
-  // Handle animation error
+  // Handle animation error (don't fail the whole process)
   const handleAnimationError = (error) => {
-    console.error('Animation loading failed:', error);
-    setError('Failed to load pack opening animation');
-    setCurrentStep('error');
+    console.warn('Animation loading failed, but continuing pack opening:', error);
+    setAnimationLoaded(true); // Mark as loaded even if failed
   };
 
   // Handle animation ended
