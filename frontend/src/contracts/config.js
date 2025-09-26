@@ -36,15 +36,15 @@ export const PACK_TYPES = {
 export const PACK_INFO = {
   [PACK_TYPES.COMMON]: {
     name: "Common Pack",
-    price: "0.1", // 0.1 HYPE
+    price: "dynamic", // Price = User's entire HYPE balance
     maxSupply: 10000,
-    description: "Standard trading card pack with common rarities"
+    description: "Trading card pack - costs your entire HYPE balance"
   },
   [PACK_TYPES.EPIC]: {
-    name: "Epic Pack",
-    price: "1", // 1 HYPE
+    name: "Epic Pack", 
+    price: "dynamic", // Price = User's entire HYPE balance
     maxSupply: 2000,
-    description: "Premium trading card pack with enhanced rarities"
+    description: "Premium trading card pack - costs your entire HYPE balance"
   }
 };
 
