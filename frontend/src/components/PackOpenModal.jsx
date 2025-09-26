@@ -131,21 +131,9 @@ const PackOpenModal = ({
 
   // Handle animation ended
   const handleAnimationEnded = () => {
-    // Animation completed, move to result
-    if (currentStep === 'animation') {
-      setTimeout(() => {
-        const mockResult = {
-          domain: `hyperpack${Math.floor(Math.random() * 10000)}.hyper`,
-          rarity: ['Common', 'Rare', 'Epic', 'Legendary', 'Mythic'][Math.floor(Math.random() * 5)],
-          tokenId: Math.floor(Math.random() * 100000),
-          transactionHash: `0x${Math.random().toString(16).substring(2, 66)}`
-        };
-
-        setPackResult(mockResult);
-        setCurrentStep('result');
-        onPackOpened?.(mockResult);
-      }, 500);
-    }
+    // Animation completed, real pack opening should have already set the result
+    // No need to do anything here since realPackOpening handles the result
+    console.log('Pack opening animation completed');
   };
 
   // Get step status
@@ -248,7 +236,7 @@ const PackOpenModal = ({
               {error || 'Something went wrong during pack opening'}
             </p>
             <div className="result-actions">
-              <button className="btn-secondary" onClick={mockPackOpening}>
+              <button className="btn-secondary" onClick={realPackOpening}>
                 Try Again
               </button>
               <button className="btn-secondary" onClick={handleClose}>
