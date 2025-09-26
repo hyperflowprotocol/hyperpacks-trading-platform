@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import IpfsMedia from './IpfsMedia.jsx';
+import IpfsMedia from './IpfsMedia';
 import { useHyperCards } from '../hooks/useHyperCards';
 
 const PACK_OPENING_ANIMATION_HASH = 'bafybeidregjjs577tozk7nw3mod3kov24wy54k2cqjtkuh6556ccnsft6u';
