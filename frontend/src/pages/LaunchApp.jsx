@@ -21,12 +21,15 @@ const LaunchApp = () => {
   const [isPackModalOpen, setIsPackModalOpen] = useState(false);
   const [selectedPackType, setSelectedPackType] = useState(null);
   const [userHypeBalance, setUserHypeBalance] = useState('0');
-  const { getHypeBalance } = useHyperCards();
+  
+  // Initialize the hook properly
+  const hyperCardsHook = useHyperCards();
+  const { getHypeBalance } = hyperCardsHook || {};
 
   // Load user's HYPE balance to show as pack price
   useEffect(() => {
     const loadBalance = async () => {
-      if (authenticated && user?.wallet?.address) {
+      if (authenticated && user?.wallet?.address && getHypeBalance) {
         try {
           const balance = await getHypeBalance();
           setUserHypeBalance(balance);
@@ -47,7 +50,7 @@ const LaunchApp = () => {
         }
       } else {
         setUserHypeBalance('0');
-        // Update pack prices to show "Connect Wallet"
+        // Update pack prices to show "Connect Wallet"  
         const commonPriceElement = document.getElementById('common-pack-price');
         const epicPriceElement = document.getElementById('epic-pack-price');
         
