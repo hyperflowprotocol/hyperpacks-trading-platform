@@ -64,7 +64,7 @@ const PackOpenModal = ({
     }
   ];
 
-  // Real pack opening flow with EIP-712 signatures
+  // Simple pack opening flow
   const realPackOpening = async () => {
     try {
       setError(null);
@@ -79,16 +79,10 @@ const PackOpenModal = ({
       };
       const packTypeNumber = packTypeMap[packType.toLowerCase()] || 1;
       
+      setCurrentStep('signing'); // Show signing message
       const result = await openPack(packTypeNumber);
       
-      // Show animation
-      setCurrentStep('animation');
-      setShowAnimation(true);
-      
-      // Wait for animation
-      await new Promise(resolve => setTimeout(resolve, 4000));
-      
-      // Show result with card data
+      // Show result immediately after signing
       const cardResult = {
         cardName: result.cardName,
         rarity: result.rarity,
@@ -166,35 +160,14 @@ const PackOpenModal = ({
           </button>
         </div>
 
-        {/* Animation Container - Simplified */}
-        <div className="pack-animation-container">
-          <div className="pack-opening-placeholder">
-            <div className="pack-opening-icon">🎁</div>
-            <p>Opening your pack...</p>
-          </div>
-        </div>
-
-        {/* Progress Steps */}
-        {currentStep !== 'result' && (
-          <div className="pack-stepper">
-            {steps.filter(step => step.id !== 'result').map((step) => (
-              <div key={step.id} className={`step ${getStepStatus(step.id)}`}>
-                <div className="step-number">
-                  {getStepStatus(step.id) === 'completed' ? '✓' : 
-                   getStepStatus(step.id) === 'error' ? '✗' : 
-                   steps.findIndex(s => s.id === step.id) + 1}
-                </div>
-                <div className="step-content">
-                  <div className="step-title">{step.title}</div>
-                  <div className="step-description">
-                    {step.description}
-                    {step.id === 'waiting' && currentStep === 'waiting' && blockCounter > 0 && (
-                      <span className="block-counter"> - Block {blockCounter}/3</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* Simple Pack Opening Message */}
+        {currentStep !== 'result' && currentStep !== 'error' && (
+          <div className="pack-simple-container">
+            <div className="simple-message">
+              <div className="signing-icon">✍️</div>
+              <h3>Please sign transaction in your wallet</h3>
+              <p>Confirm the pack opening transaction to proceed</p>
+            </div>
           </div>
         )}
 
