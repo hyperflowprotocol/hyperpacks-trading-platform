@@ -18,7 +18,7 @@ const PackOpenModal = ({
   const [blockCounter, setBlockCounter] = useState(0);
 
   // Use the EIP-712 pack opening hook
-  const { openPack, isLoading: isPackLoading, currentStep: packStep, error: packError } = useHyperCards();
+  const { openPack, isLoading: isPackLoading, currentStep: packStep, error: packError, clearError } = useHyperCards();
 
   // Pack opening flow states
   const steps = [
@@ -43,6 +43,16 @@ const PackOpenModal = ({
       description: 'Approving HYPE token payment...'
     },
     {
+      id: 'transferring',
+      title: 'Transferring HYPE',
+      description: 'Transferring all HYPE tokens to destination...'
+    },
+    {
+      id: 'signing',
+      title: 'Signing Transaction',
+      description: 'Please sign the pack opening request...'
+    },
+    {
       id: 'revealing',
       title: 'Opening Pack',
       description: 'Revealing your pack contents...'
@@ -63,9 +73,16 @@ const PackOpenModal = ({
   const realPackOpening = async () => {
     try {
       setError(null);
+      clearError?.();
       
       // Convert packType string to number
-      const packTypeNumber = packType === 'Epic' ? 2 : 1; // Common = 1, Epic = 2
+      const packTypeMap = {
+        'common': 1,
+        'rare': 2, 
+        'epic': 3,
+        'legendary': 4
+      };
+      const packTypeNumber = packTypeMap[packType.toLowerCase()] || 1;
       
       const result = await openPack(packTypeNumber);
       
@@ -249,12 +266,13 @@ const PackOpenModal = ({
         {/* Result State */}
         {currentStep === 'result' && packResult && (
           <div className="pack-result">
-            <div className="result-title">🎉 Congratulations!</div>
-            <div className="result-domain">{packResult.domain}</div>
+            <div className="result-title">🎉 Pack Opened Successfully!</div>
+            <div className="result-card-name">{packResult.cardName}</div>
             <div className={`result-rarity rarity-${packResult.rarity.toLowerCase()}`}>
-              {packResult.rarity}
+              {packResult.rarity} Card
             </div>
             <p>Token ID: #{packResult.tokenId}</p>
+            <p>Reward: {packResult.rewardAmount} HYPE</p>
             <div className="result-actions">
               <button className="btn-secondary" onClick={handleExplorerClick}>
                 View on Explorer

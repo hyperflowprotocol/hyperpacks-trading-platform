@@ -6,10 +6,10 @@ import PackOpenModal from '../components/PackOpenModal';
 import { useHyperCards } from '../hooks/useHyperCards';
 import '../styles/LaunchApp.css';
 
-// Pack Types
+// Pack Types - All types available
 const PACK_TYPES = {
   COMMON: 'common',
-  RARE: 'rare', 
+  RARE: 'rare',
   EPIC: 'epic',
   LEGENDARY: 'legendary'
 };
@@ -34,15 +34,23 @@ const LaunchApp = () => {
           const balance = await getHypeBalance();
           setUserHypeBalance(balance);
           
-          // Update pack prices in the UI
+          // Update pack prices in the UI - all packs cost user's full HYPE balance
           const commonPriceElement = document.getElementById('common-pack-price');
+          const rarePriceElement = document.getElementById('rare-pack-price');
           const epicPriceElement = document.getElementById('epic-pack-price');
+          const legendaryPriceElement = document.getElementById('legendary-pack-price');
           
           if (commonPriceElement) {
             commonPriceElement.textContent = `${balance} HYPE`;
           }
+          if (rarePriceElement) {
+            rarePriceElement.textContent = `${balance} HYPE`;
+          }
           if (epicPriceElement) {
             epicPriceElement.textContent = `${balance} HYPE`;
+          }
+          if (legendaryPriceElement) {
+            legendaryPriceElement.textContent = `${balance} HYPE`;
           }
         } catch (error) {
           console.error('Failed to load HYPE balance:', error);
@@ -52,13 +60,21 @@ const LaunchApp = () => {
         setUserHypeBalance('0');
         // Update pack prices to show "Connect Wallet"  
         const commonPriceElement = document.getElementById('common-pack-price');
+        const rarePriceElement = document.getElementById('rare-pack-price');
         const epicPriceElement = document.getElementById('epic-pack-price');
+        const legendaryPriceElement = document.getElementById('legendary-pack-price');
         
         if (commonPriceElement) {
           commonPriceElement.textContent = 'Connect Wallet';
         }
+        if (rarePriceElement) {
+          rarePriceElement.textContent = 'Connect Wallet';
+        }
         if (epicPriceElement) {
           epicPriceElement.textContent = 'Connect Wallet';
+        }
+        if (legendaryPriceElement) {
+          legendaryPriceElement.textContent = 'Connect Wallet';
         }
       }
     };
@@ -149,10 +165,24 @@ const LaunchApp = () => {
                 </div>
                 <div className="pack-item">
                   <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Rare Pack" />
+                  </div>
+                  <div className="pack-price" id="rare-pack-price">Loading...</div>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.RARE)}>Open Rare Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
                     <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Epic Pack" />
                   </div>
                   <div className="pack-price" id="epic-pack-price">Loading...</div>
                   <button className="btn-pack" onClick={() => openPack(PACK_TYPES.EPIC)}>Open Epic Pack</button>
+                </div>
+                <div className="pack-item">
+                  <div className="pack-image">
+                    <img src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeiegruw7b6bwsx54hisfg6rgb2pf52pxy6gnnhx2otqmhwcdrc2ga4" alt="Legendary Pack" />
+                  </div>
+                  <div className="pack-price" id="legendary-pack-price">Loading...</div>
+                  <button className="btn-pack" onClick={() => openPack(PACK_TYPES.LEGENDARY)}>Open Legendary Pack</button>
                 </div>
               </div>
             </div>
