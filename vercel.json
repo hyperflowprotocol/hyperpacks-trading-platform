@@ -1,12 +1,14 @@
 {
   "version": 2,
-  "name": "hyperpacks-trading-platform",
   "builds": [
     {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "outputDirectory": "dist"
+        "outputDirectory": "dist",
+        "installCommand": "cd frontend && npm install --legacy-peer-deps",
+        "buildCommand": "cd frontend && npm run build",
+        "nodeVersion": "18.x"
       }
     }
   ],
@@ -18,5 +20,13 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
+  ],
+  "env": {
+    "VITE_PRIVY_APP_ID": "cmf0n2ra100qzl20b4gxr8ql0",
+    "NODE_ENV": "production"
+  },
+  "functions": {},
+  "regions": [
+    "iad1"
   ]
 }
