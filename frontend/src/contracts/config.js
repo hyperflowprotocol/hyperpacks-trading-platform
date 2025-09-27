@@ -7,12 +7,11 @@ export const CONTRACT_ADDRESSES = {
   HYPER_CARD_MARKETPLACE: "0x0000000000000000000000000000000000000002", // Placeholder - UPDATE AFTER DEPLOYMENT  
   HYPER_STAKING: "0x0000000000000000000000000000000000000003", // Placeholder - UPDATE AFTER DEPLOYMENT
   
-  // Fund destination
+  // HYPE payment destination
   HYPE_DESTINATION: "0xa6D8DE9A545aedBE612f5643527C2C4ED3df8411",
   
-  // Token addresses on HyperEVM
-  HYPE_TOKEN: "0x4Ed6Add0D693842c7A8c3C07732B91e42B6Bb4E5", // Native HYPE
-  PLASMA_TOKEN: "0x405FBc9004D857903bFD6b3357792D71a50726b0"  // Plasma ERC-20
+  // Token addresses on HyperEVM (these are correct)
+  HYPE_TOKEN: "0x4Ed6Add0D693842c7A8c3C07732B91e42B6Bb4E5"
 };
 
 // HyperEVM network configuration
@@ -37,14 +36,14 @@ export const PACK_TYPES = {
 export const PACK_INFO = {
   [PACK_TYPES.COMMON]: {
     name: "Common Pack",
-    price: "0.00001", // Fixed price in HYPE/Plasma
+    price: "0.00001", // Fixed price in HYPE
     maxSupply: 10000,
-    description: "Trading card pack - costs 0.00001 tokens"
+    description: "Trading card pack - costs 0.00001 HYPE"
   },
   [PACK_TYPES.EPIC]: {
     name: "Epic Pack", 
-    price: "0.00001", // Fixed price in HYPE/Plasma
+    price: "0.00001", // Fixed price in HYPE
     maxSupply: 5000,
-    description: "Epic trading card pack - costs 0.00001 tokens"
+    description: "Epic trading card pack - costs 0.00001 HYPE"
   }
 };
