@@ -5,5 +5,11 @@
   "framework": "vite",
   "env": {
     "VITE_PRIVY_APP_ID": "cmf0n2ra100qzl20b4gxr8ql0"
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
