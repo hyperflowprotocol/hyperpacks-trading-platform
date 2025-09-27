@@ -1,13 +1,12 @@
 {
   "version": 2,
+  "name": "hyperpacks-trading-platform",
   "builds": [
     {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist",
-        "installCommand": "npm install --legacy-peer-deps",
-        "buildCommand": "npm run build"
+        "outputDirectory": "dist"
       }
     }
   ],
@@ -19,23 +18,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://auth.privy.io https://privy.io https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://auth.privy.io https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https: wss: blob:; frame-src 'self' https://auth.privy.io https://verify.walletconnect.com; object-src 'none'; base-uri 'self';"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        }
-      ]
-    }
-  ],
-  "env": {
-    "VITE_PRIVY_APP_ID": "cmf0n2ra100qzl20b4gxr8ql0"
-  }
+  ]
 }
