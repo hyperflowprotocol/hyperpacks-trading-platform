@@ -7,7 +7,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite preview --port 5000 --host 0.0.0.0",
-    "vercel-build": "vite build"
+    "vercel-build": "vite build",
+    "postinstall": "echo Build environment ready"
   },
   "dependencies": {
     "@privy-io/react-auth": "^2.25.0",
@@ -23,5 +24,9 @@
     "@vitejs/plugin-react": "^4.0.3",
     "vite": "^5.4.0",
     "yaml": "^2.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
