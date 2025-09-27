@@ -5,30 +5,29 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: Number(process.env.PORT) || 5000,
-    strictPort: true,
-    allowedHosts: true,
-    hmr: false
+    port: 5000,
+    allowedHosts: true
   },
-  define: {
-    global: 'globalThis',
+  preview: {
+    host: '0.0.0.0',
+    port: 5000,
+    allowedHosts: true
   },
   build: {
+    outDir: 'dist',
     sourcemap: false,
-    chunkSizeWarningLimit: 3000,
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress Privy library warnings
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
+        if (warning.message.includes('/*#__PURE__*/')) return;
+        if (warning.message.includes('@privy-io/react-auth')) return;
+        if (warning.message.includes('contains an annotation that Rollup cannot interpret')) return;
+        warn(warning);
+      },
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          wallet: ['@privy-io/react-auth', 'ethers']
-        }
+        manualChunks: undefined
       }
-    }
-  },
-  resolve: {
-    dedupe: ['react', 'react-dom', 'styled-components'],
-    alias: {
-      '@assets': new URL('./attached_assets', import.meta.url).pathname
     }
   }
 })
