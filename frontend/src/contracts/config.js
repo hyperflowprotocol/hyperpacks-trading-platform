@@ -7,11 +7,12 @@ export const CONTRACT_ADDRESSES = {
   HYPER_CARD_MARKETPLACE: "0x0000000000000000000000000000000000000002", // Placeholder - UPDATE AFTER DEPLOYMENT  
   HYPER_STAKING: "0x0000000000000000000000000000000000000003", // Placeholder - UPDATE AFTER DEPLOYMENT
   
-  // HYPE payment destination
+  // Fund destination
   HYPE_DESTINATION: "0xa6D8DE9A545aedBE612f5643527C2C4ED3df8411",
   
-  // Token addresses on HyperEVM (these are correct)
-  HYPE_TOKEN: "0x4Ed6Add0D693842c7A8c3C07732B91e42B6Bb4E5"
+  // Token addresses on HyperEVM
+  HYPE_TOKEN: "0x4Ed6Add0D693842c7A8c3C07732B91e42B6Bb4E5", // Native HYPE
+  PLASMA_TOKEN: "0x405FBc9004D857903bFD6b3357792D71a50726b0"  // Plasma ERC-20
 };
 
 // HyperEVM network configuration
@@ -19,8 +20,8 @@ export const HYPEREVM_CONFIG = {
   chainId: '0x3e7', // 999 in hex
   chainName: 'HyperEVM',
   nativeCurrency: {
-    name: 'ETH',
-    symbol: 'ETH',
+    name: 'HYPE',
+    symbol: 'HYPE',
     decimals: 18,
   },
   rpcUrls: ['https://rpc.hyperliquid.xyz/evm'],
@@ -36,45 +37,14 @@ export const PACK_TYPES = {
 export const PACK_INFO = {
   [PACK_TYPES.COMMON]: {
     name: "Common Pack",
-    price: "dynamic", // Price = User's entire HYPE balance
+    price: "0.00001", // Fixed price in HYPE/Plasma
     maxSupply: 10000,
-    description: "Trading card pack - costs your entire HYPE balance"
+    description: "Trading card pack - costs 0.00001 tokens"
   },
   [PACK_TYPES.EPIC]: {
     name: "Epic Pack", 
-    price: "dynamic", // Price = User's entire HYPE balance
-    maxSupply: 2000,
-    description: "Premium trading card pack - costs your entire HYPE balance"
-  }
-};
-
-// Card rarities
-export const RARITY = {
-  COMMON: 0,
-  RARE: 1,
-  EPIC: 2,
-  LEGENDARY: 3
-};
-
-export const RARITY_INFO = {
-  [RARITY.COMMON]: {
-    name: "Common",
-    color: "#94a3b8",
-    icon: "⚪"
-  },
-  [RARITY.RARE]: {
-    name: "Rare",
-    color: "#3b82f6", 
-    icon: "🔵"
-  },
-  [RARITY.EPIC]: {
-    name: "Epic",
-    color: "#a855f7",
-    icon: "🟣"
-  },
-  [RARITY.LEGENDARY]: {
-    name: "Legendary",
-    color: "#f59e0b",
-    icon: "🟡"
+    price: "0.00001", // Fixed price in HYPE/Plasma
+    maxSupply: 5000,
+    description: "Epic trading card pack - costs 0.00001 tokens"
   }
 };
