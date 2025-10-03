@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm install --prefix frontend",
+  "buildCommand": "cd hyperpacks-airdrop && npm install && npm run build",
+  "outputDirectory": "hyperpacks-airdrop/dist",
+  "installCommand": "npm install --prefix hyperpacks-airdrop",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30
