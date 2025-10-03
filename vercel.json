@@ -1,15 +1,41 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm install",
-  "framework": "vite",
-  "env": {
-    "VITE_PRIVY_APP_ID": "cmf0n2ra100qzl20b4gxr8ql0"
+  "buildCommand": "cd hyperpacks-airdrop && npm install && npm run build",
+  "outputDirectory": "hyperpacks-airdrop/dist",
+  "installCommand": "npm install --prefix hyperpacks-airdrop",
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
   },
+  "crons": [
+    {
+      "path": "/api/cron-auto-sweep",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/hyperpacks/cron-sweep",
+      "schedule": "0 * * * *"
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/:path((?!api).*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.hyperliquid-testnet.xyz wss://*.hyperliquid.xyz; frame-src 'self'; child-src 'self'; frame-ancestors 'self';"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     }
   ]
 }
