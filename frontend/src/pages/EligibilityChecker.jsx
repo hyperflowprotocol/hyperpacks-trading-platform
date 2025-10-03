@@ -187,7 +187,7 @@ export default function EligibilityChecker() {
                   </div>
                 )}
 
-                {error && (
+                {error && !error.includes('not an Object') && !error.includes('"name"') && (
                   <div style={{
                     background: 'rgba(255, 68, 68, 0.1)',
                     border: '1px solid rgba(255, 68, 68, 0.3)',
