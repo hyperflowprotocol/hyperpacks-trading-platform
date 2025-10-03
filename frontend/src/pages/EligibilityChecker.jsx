@@ -104,7 +104,6 @@ const EligibilityChecker = () => {
 
   return (
     <div className="app">
-      {/* Navigation */}
       <nav className="nav">
         <div className="nav-container">
           <div className="nav-logo">
@@ -124,7 +123,6 @@ const EligibilityChecker = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
       <section className="eligibility-section">
         <div className="container">
           <div className="eligibility-header">
@@ -163,7 +161,7 @@ const EligibilityChecker = () => {
               )}
 
               {eligibility && !loading && (
-                <div className=`result-card ${eligibility.eligible ? 'eligible' : 'not-eligible'}`}>
+                <div className={`result-card ${eligibility.eligible ? 'eligible' : 'not-eligible'}`}>
                   <div className="status-icon">
                     {eligibility.eligible ? '✅' : '❌'}
                   </div>
@@ -171,7 +169,7 @@ const EligibilityChecker = () => {
                     {eligibility.eligible
                       ? eligibility.claimed
                         ? 'Already Claimed!'
-                        : 'You're Eligible!'
+                        : "You're Eligible!"
                       : 'Not Eligible'}
                   </h2>
                   {eligibility.eligible && (
