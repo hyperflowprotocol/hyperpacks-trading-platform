@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import PackOpenModal from '../components/PackOpenModal';
@@ -16,7 +15,8 @@ const PACK_TYPES = {
 
 
 const LaunchApp = () => {
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  const authenticated = false;
+  const user = null;
   const [showToast, setShowToast] = useState(false);
   const [isPackModalOpen, setIsPackModalOpen] = useState(false);
   const [selectedPackType, setSelectedPackType] = useState(null);

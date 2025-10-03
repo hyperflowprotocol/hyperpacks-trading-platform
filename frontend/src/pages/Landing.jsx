@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
 import Footer from '../components/Footer';
 
 const Landing = () => {
-  const { ready, authenticated, login, logout } = usePrivy();
-  const { wallets } = useWallets();
 
   return (
     <div className="app">

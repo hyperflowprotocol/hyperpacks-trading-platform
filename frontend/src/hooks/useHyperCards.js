@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { usePrivy } from '@privy-io/react-auth';
 import { CONTRACT_ADDRESSES, PACK_TYPES, PACK_INFO, HYPEREVM_CONFIG, PLASMA_CONFIG, SUPPORTED_NETWORKS } from '../contracts/config';
 import HyperCardsABI from '../contracts/HyperCards.json';
 
@@ -13,7 +12,8 @@ const ERC20_ABI = [
 ];
 
 export const useHyperCards = () => {
-  const { authenticated, user } = usePrivy();
+  const authenticated = false;
+  const user = null;
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(null);
   const [error, setError] = useState(null);

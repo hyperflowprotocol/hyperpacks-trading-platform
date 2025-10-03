@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { usePrivy, useWallets, useSendTransaction } from '@privy-io/react-auth';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Toast from '../components/Toast';
@@ -7,9 +6,8 @@ import usePresaleProgress from '../hooks/usePresaleProgress';
 import '../styles/Presale.css';
 
 const Presale = () => {
-  const { ready, authenticated, user, login, logout } = usePrivy();
-  const { wallets } = useWallets();
-  const { sendTransaction } = useSendTransaction();
+  const authenticated = false;
+  const user = null;
   // Use database-backed hook for cross-browser sync
   const {
     totalRaised,
