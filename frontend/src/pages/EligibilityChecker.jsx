@@ -167,15 +167,9 @@ export default function EligibilityChecker() {
                   <p style={{color: '#666666', fontSize: '12px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
                     Connected Wallet
                   </p>
-                  <p style={{color: '#ffffff', fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', wordBreak: 'break-all', marginBottom: '16px'}}>
+                  <p style={{color: '#ffffff', fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', wordBreak: 'break-all'}}>
                     {address}
                   </p>
-                  <div style={{borderTop: '1px solid #333333', paddingTop: '16px'}}>
-                    <p style={{color: '#666666', fontSize: '12px', marginBottom: '4px'}}>HYPE Balance</p>
-                    <p style={{color: '#ffffff', fontSize: '20px', fontWeight: '700'}}>
-                      {parseFloat(hypeBalance).toFixed(4)} HYPE
-                    </p>
-                  </div>
                 </div>
 
                 {loading && (
@@ -230,7 +224,7 @@ export default function EligibilityChecker() {
                               {ethers.formatEther(eligibility.allocation)}
                             </p>
                             <p style={{fontSize: '12px', color: '#666666', textTransform: 'uppercase', letterSpacing: '1px'}}>
-                              HYPE Allocation
+                              Allocation
                             </p>
                           </div>
                         </div>
