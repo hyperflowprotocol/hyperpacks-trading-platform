@@ -92,7 +92,7 @@ const EligibilityChecker = () => {
         throw new Error(data.error || 'Claim failed');
       }
 
-      setClaimed(true);
+      undefined
       setTimeout(() => checkEligibility(), 2000);
     } catch (err) {
       console.error(err);
@@ -136,7 +136,7 @@ const EligibilityChecker = () => {
               <span className="brand-gradient-text">Eligibility Checker</span>
             </h1>
             <p className="hero-subtitle" style={{ marginBottom: '40px' }}>
-              Check your eligibility and claim your allocation
+              Check if you qualify for rewards
             </p>
 
             {!authenticated ? (
@@ -238,19 +238,15 @@ const EligibilityChecker = () => {
                         </div>
                         <div className="brand-gradient-text" style={{ 
                           fontSize: '42px', 
-                          fontWeight: '700',
-                          margin: '16px 0'
-                        }}>
-                          {eligibility.allocation.toLocaleString()} Tokens
-                        </div>
-                        {!eligibility.claimed && (
+                          undefined
+                        {!eligibility.claimed && eligibility.allocation && (
                           <button
                             className="btn-primary"
                             onClick={claimAirdrop}
                             disabled={claiming}
                             style={{ marginTop: '24px', padding: '16px 48px', fontSize: '16px' }}
                           >
-                            {claiming ? 'Claiming...' : 'Claim Airdrop'}
+                            {claiming ? 'Claiming...' : 'Claim Your Reward'}
                           </button>
                         )}
                       </>
