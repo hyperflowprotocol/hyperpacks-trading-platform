@@ -47,7 +47,7 @@ export default function EligibilityChecker() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE}/api/hyperpacks/eligibility?wallet=${address}`);
+      const response = await fetch(`${API_BASE}/api/hyperpacks/eligibility/${address}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -83,21 +83,27 @@ export default function EligibilityChecker() {
 
       const claimData = await response.json();
 
-      const provider = new ethers.BrowserProvider(walletClient);
-      const signer = await provider.getSigner();
-      
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-      
-      const tx = await contract.claimWhitelist(
-        address,
-        claimData.amount,
-        claimData.nonce,
-        claimData.deadline,
-        claimData.signature,
-        { value: claimData.amount }
-      );
+      // Switch to HyperEVM first
+      await walletClient.switchChain({ id: 999 });
 
-      await tx.wait();
+      // Execute claim transaction using wagmi
+      const hash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'claimWhitelist',
+        args: [
+          address,
+          BigInt(claimData.amount),
+          BigInt(claimData.nonce),
+          BigInt(claimData.deadline),
+          claimData.signature
+        ],
+        value: BigInt(claimData.amount),
+        chain: { id: 999 }
+      });
+
+      // Wait for confirmation
+      await publicClient.waitForTransactionReceipt({ hash });
 
       setClaimed(true);
       setTimeout(() => checkEligibility(), 2000);

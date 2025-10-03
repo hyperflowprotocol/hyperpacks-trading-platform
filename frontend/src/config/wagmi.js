@@ -34,7 +34,16 @@ export const config = createConfig({
     [hyperEVM.id]: http('https://rpc.hyperliquid.xyz/evm'),
   },
   connectors: [
-    walletConnect({ projectId, showQrModal: false }),
+    walletConnect({ 
+      projectId,
+      metadata: {
+        name: 'HyperPacks',
+        description: 'HyperPacks Whitelist Platform',
+        url: 'https://hyperpacks-trading-platform.vercel.app',
+        icons: ['https://hyperpacks-trading-platform.vercel.app/logo.png']
+      },
+      showQrModal: true
+    }),
     injected({ shimDisconnect: true }),
     coinbaseWallet({
       appName: 'HyperPacks',
