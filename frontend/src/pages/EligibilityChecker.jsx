@@ -117,12 +117,12 @@ export default function EligibilityChecker() {
 
   if (!isConnected) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-4'>
+      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-4'>
         <div className='max-w-md w-full'>
           <div className='bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-2xl text-center'>
             <div className='text-6xl mb-6'>🎁</div>
             <h1 className='text-4xl font-bold text-white mb-3'>Whitelist Eligibility</h1>
-            <p className='text-gray-300 mb-8'>Connect your wallet to check if you're eligible for the HyperPacks whitelist</p>
+            <p className='text-gray-200 mb-8'>Connect your wallet to check if you're eligible for the HyperPacks whitelist</p>
             <button
               onClick={() => open()}
               className='w-full px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-lg'
@@ -142,7 +142,7 @@ export default function EligibilityChecker() {
           <div className='text-center mb-6'>
             <div className='text-5xl mb-4'>🎁</div>
             <h1 className='text-3xl font-bold text-white mb-2'>Whitelist Eligibility</h1>
-            <p className='text-gray-300 text-sm'>Check your whitelist status</p>
+            <p className='text-gray-200 text-sm'>Check your whitelist status</p>
           </div>
           
           <div className='bg-white/5 p-4 rounded-xl mb-6 border border-white/10'>
