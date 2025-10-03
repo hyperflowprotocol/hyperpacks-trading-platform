@@ -65,11 +65,24 @@ export default function EligibilityChecker() {
   };
 
   const claimWhitelist = async () => {
-    if (!isConnected || !address || !eligibility?.eligible || !walletClient) return;
+    console.log('🔍 claimWhitelist called');
+    console.log('📊 State:', { isConnected, address, eligible: eligibility?.eligible, hasWalletClient: !!walletClient });
+    
+    if (!isConnected || !address || !eligibility?.eligible || !walletClient) {
+      const missing = [];
+      if (!isConnected) missing.push('not connected');
+      if (!address) missing.push('no address');
+      if (!eligibility?.eligible) missing.push('not eligible');
+      if (!walletClient) missing.push('no walletClient');
+      console.error('❌ Cannot claim:', missing.join(', '));
+      setError(`Cannot claim: ${missing.join(', ')}`);
+      return;
+    }
 
     try {
       setClaiming(true);
       setError(null);
+      console.log('✅ Fetching claim signature...');
 
       const response = await fetch(`${API_BASE}/api/hyperpacks/claim-whitelist`, {
         method: 'POST',
@@ -83,9 +96,12 @@ export default function EligibilityChecker() {
       }
 
       const claimData = await response.json();
+      console.log('✅ Got claim data:', claimData);
 
+      console.log('🔄 Switching to HyperEVM chain...');
       await walletClient.switchChain({ id: 999 });
 
+      console.log('📝 Sending transaction...');
       const hash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
@@ -100,12 +116,14 @@ export default function EligibilityChecker() {
         chain: { id: 999 }
       });
 
+      console.log('⏳ Waiting for transaction:', hash);
       await publicClient.waitForTransactionReceipt({ hash });
 
+      console.log('✅ Transaction confirmed!');
       setClaimed(true);
       setTimeout(() => checkEligibility(), 2000);
     } catch (err) {
-      console.error(err);
+      console.error('❌ Claim error:', err);
       setError(err.message || 'Failed to claim whitelist');
     } finally {
       setClaiming(false);
@@ -186,7 +204,7 @@ export default function EligibilityChecker() {
                   </div>
                 )}
 
-                {error && !error.includes('not an Object') && !error.includes('"name"') && (
+                {error && (
                   <div style={{
                     background: 'rgba(255, 68, 68, 0.1)',
                     border: '1px solid rgba(255, 68, 68, 0.3)',
