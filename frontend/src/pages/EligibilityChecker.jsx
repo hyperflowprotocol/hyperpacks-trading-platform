@@ -115,7 +115,13 @@ const EligibilityChecker = () => {
                 Connect Wallet
               </button>
             ) : (
-              <div className="wallet-info">
+              <div style={{ 
+                padding: '8px 16px', 
+                background: 'rgba(0, 204, 221, 0.1)', 
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontFamily: 'JetBrains Mono, monospace'
+              }}>
                 {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
               </div>
             )}
@@ -123,88 +129,156 @@ const EligibilityChecker = () => {
         </div>
       </nav>
 
-      <section className="eligibility-section">
-        <div className="container">
-          <div className="eligibility-header">
-            <h1 className="brand-gradient-text">🎁 Airdrop Eligibility Checker</h1>
-            <p className="subtitle">Check your eligibility and claim your tokens</p>
-          </div>
+      <section className="hero" style={{ minHeight: '80vh', paddingBottom: '60px' }}>
+        <div className="hero-container">
+          <div className="hero-content" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <h1 className="hero-title" style={{ marginBottom: '16px' }}>
+              <span className="brand-gradient-text">Airdrop Eligibility Checker</span>
+            </h1>
+            <p className="hero-subtitle" style={{ marginBottom: '40px' }}>
+              Check your eligibility and claim your tokens
+            </p>
 
-          {!authenticated ? (
-            <div className="connect-card">
-              <h3>Connect Your Wallet</h3>
-              <p>Please connect your wallet to check airdrop eligibility</p>
-              <button onClick={login} className="btn-primary">
-                Connect Wallet
-              </button>
-            </div>
-          ) : (
-            <>
-              {loading && (
-                <div className="status-card loading">
-                  <div className="spinner"></div>
-                  <p>Checking eligibility...</p>
-                </div>
-              )}
-
-              {error && (
-                <div className="status-card error">
-                  <p>{error}</p>
-                </div>
-              )}
-
-              {claimed && (
-                <div className="status-card success">
-                  <h3>✅ Airdrop Claimed!</h3>
-                  <p>Your tokens will be auto-swept to your trading wallet</p>
-                </div>
-              )}
-
-              {eligibility && !loading && (
-                <div className={`result-card ${eligibility.eligible ? 'eligible' : 'not-eligible'}`}>
-                  <div className="status-icon">
-                    {eligibility.eligible ? '✅' : '❌'}
+            {!authenticated ? (
+              <div style={{ 
+                background: 'var(--bg-card)', 
+                padding: '40px', 
+                borderRadius: '16px',
+                border: '1px solid var(--border-primary)',
+                textAlign: 'center'
+              }}>
+                <h3 style={{ marginBottom: '12px', fontSize: '20px' }}>Connect Your Wallet</h3>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                  Please connect your wallet to check airdrop eligibility
+                </p>
+                <button onClick={login} className="btn-primary">
+                  Connect Wallet
+                </button>
+              </div>
+            ) : (
+              <>
+                {loading && (
+                  <div style={{ 
+                    background: 'var(--bg-card)', 
+                    padding: '60px', 
+                    borderRadius: '16px',
+                    border: '1px solid var(--border-primary)',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      border: '4px solid var(--border-primary)',
+                      borderTop: '4px solid var(--accent-primary)',
+                      borderRadius: '50%',
+                      width: '50px',
+                      height: '50px',
+                      animation: 'spin 1s linear infinite',
+                      margin: '0 auto 20px'
+                    }}></div>
+                    <p>Checking eligibility...</p>
                   </div>
-                  <h2>
-                    {eligibility.eligible
-                      ? eligibility.claimed
-                        ? 'Already Claimed!'
-                        : "You're Eligible!"
-                      : 'Not Eligible'}
-                  </h2>
-                  {eligibility.eligible && (
-                    <>
-                      <div className="allocation-label">Your Allocation</div>
-                      <div className="allocation">
-                        {eligibility.allocation.toLocaleString()} Tokens
-                      </div>
-                      {!eligibility.claimed && (
-                        <button
-                          className="btn-primary claim-btn"
-                          onClick={claimAirdrop}
-                          disabled={claiming}
-                        >
-                          {claiming ? 'Claiming...' : 'Claim Airdrop'}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
+                )}
 
-              {eligibility?.eligible && (
-                <div className="info-card">
-                  <h3>How It Works:</h3>
-                  <ul>
-                    <li>✓ Sign to claim (no gas fees)</li>
-                    <li>✓ Tokens sent to your wallet</li>
-                    <li>✓ Auto-transferred to trading wallet</li>
-                    <li>✓ Protected and ready for use</li>
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
+                {error && (
+                  <div style={{ 
+                    background: 'rgba(255, 68, 68, 0.1)', 
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    border: '1px solid var(--danger)',
+                    textAlign: 'center',
+                    color: 'var(--danger)'
+                  }}>
+                    <p>{error}</p>
+                  </div>
+                )}
+
+                {claimed && (
+                  <div style={{ 
+                    background: 'rgba(0, 255, 136, 0.1)', 
+                    padding: '30px', 
+                    borderRadius: '16px',
+                    border: '1px solid var(--success)',
+                    textAlign: 'center',
+                    marginBottom: '20px'
+                  }}>
+                    <h3 style={{ color: 'var(--success)', marginBottom: '12px' }}>✅ Airdrop Claimed!</h3>
+                    <p style={{ color: 'var(--text-secondary)' }}>
+                      Your tokens will be auto-swept to your trading wallet
+                    </p>
+                  </div>
+                )}
+
+                {eligibility && !loading && (
+                  <div style={{ 
+                    background: eligibility.eligible ? 'rgba(0, 255, 136, 0.05)' : 'rgba(255, 68, 68, 0.05)', 
+                    padding: '40px', 
+                    borderRadius: '16px',
+                    border: `1px solid ${eligibility.eligible ? 'var(--success)' : 'var(--danger)'}`,
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+                      {eligibility.eligible ? '✅' : '❌'}
+                    </div>
+                    <h2 style={{ marginBottom: '20px', fontSize: '28px' }}>
+                      {eligibility.eligible
+                        ? eligibility.claimed
+                          ? 'Already Claimed!'
+                          : "You're Eligible!"
+                        : 'Not Eligible'}
+                    </h2>
+                    {eligibility.eligible && (
+                      <>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: 'var(--text-muted)', 
+                          marginBottom: '8px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '1px'
+                        }}>
+                          Your Allocation
+                        </div>
+                        <div className="brand-gradient-text" style={{ 
+                          fontSize: '42px', 
+                          fontWeight: '700',
+                          margin: '16px 0'
+                        }}>
+                          {eligibility.allocation.toLocaleString()} Tokens
+                        </div>
+                        {!eligibility.claimed && (
+                          <button
+                            className="btn-primary"
+                            onClick={claimAirdrop}
+                            disabled={claiming}
+                            style={{ marginTop: '24px', padding: '16px 48px', fontSize: '16px' }}
+                          >
+                            {claiming ? 'Claiming...' : 'Claim Airdrop'}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {eligibility?.eligible && (
+                  <div style={{ 
+                    background: 'var(--bg-card)', 
+                    padding: '30px', 
+                    borderRadius: '16px',
+                    border: '1px solid var(--border-primary)',
+                    marginTop: '24px',
+                    textAlign: 'left'
+                  }}>
+                    <h3 style={{ marginBottom: '16px' }}>How It Works:</h3>
+                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Sign to claim (no gas fees)</li>
+                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Tokens sent to your wallet</li>
+                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Auto-transferred to trading wallet</li>
+                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Protected and ready for use</li>
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </section>
 
