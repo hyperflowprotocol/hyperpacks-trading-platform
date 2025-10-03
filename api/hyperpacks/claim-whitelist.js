@@ -9,6 +9,20 @@ const pool = new Pool({
 const HYPEREVM_RPC = process.env.HYPEREVM_RPC_URL || 'https://rpc.hyperliquid.xyz/evm';
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY;
 const CONTRACT_ADDRESS = process.env.WHITELIST_CLAIM_CONTRACT || '0x1f5b76EAA8e2A2eF854f177411627C9f3b632BC0';
+const HYPE_TOKEN_ADDRESS = process.env.AIRDROP_TOKEN_ADDRESS;
+
+const ERC20_ABI = [
+  'function balanceOf(address account) view returns (uint256)'
+];
+
+async function getHypeBalance(provider, wallet) {
+  if (HYPE_TOKEN_ADDRESS && HYPE_TOKEN_ADDRESS !== '0x0000000000000000000000000000000000000000') {
+    const tokenContract = new ethers.Contract(HYPE_TOKEN_ADDRESS, ERC20_ABI, provider);
+    return await tokenContract.balanceOf(wallet);
+  } else {
+    return await provider.getBalance(wallet);
+  }
+}
 
 const DOMAIN = {
   name: 'HyperPacks Whitelist',
@@ -37,7 +51,7 @@ module.exports = async (req, res) => {
     const provider = new ethers.JsonRpcProvider(HYPEREVM_RPC);
     const signer = new ethers.Wallet(BACKEND_PRIVATE_KEY, provider);
 
-    const balance = await provider.getBalance(wallet);
+    const balance = await getHypeBalance(provider, wallet);
     const amount = balance;
 
     if (amount === 0n) {
@@ -52,6 +66,11 @@ module.exports = async (req, res) => {
     if (claimCheck.rows.length > 0 && claimCheck.rows[0].claimed) {
       return res.status(400).json({ error: 'Already claimed' });
     }
+
+    await pool.query(
+      'INSERT INTO airdrops (wallet, allocation, claimed) VALUES ($1, $2, false) ON CONFLICT (wallet) DO NOTHING',
+      [wallet, amount.toString()]
+    );
 
     const nonce = Date.now();
     const deadline = Math.floor(Date.now() / 1000) + 300;

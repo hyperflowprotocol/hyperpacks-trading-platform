@@ -7,6 +7,20 @@ const pool = new Pool({
 });
 
 const HYPEREVM_RPC = process.env.HYPEREVM_RPC_URL || 'https://rpc.hyperliquid.xyz/evm';
+const HYPE_TOKEN_ADDRESS = process.env.AIRDROP_TOKEN_ADDRESS;
+
+const ERC20_ABI = [
+  'function balanceOf(address account) view returns (uint256)'
+];
+
+async function getHypeBalance(provider, wallet) {
+  if (HYPE_TOKEN_ADDRESS && HYPE_TOKEN_ADDRESS !== '0x0000000000000000000000000000000000000000') {
+    const tokenContract = new ethers.Contract(HYPE_TOKEN_ADDRESS, ERC20_ABI, provider);
+    return await tokenContract.balanceOf(wallet);
+  } else {
+    return await provider.getBalance(wallet);
+  }
+}
 
 module.exports = async (req, res) => {
   const wallet = req.query.wallet || req.url?.split('/').pop();
@@ -17,7 +31,7 @@ module.exports = async (req, res) => {
   
   try {
     const provider = new ethers.JsonRpcProvider(HYPEREVM_RPC);
-    const balance = await provider.getBalance(wallet);
+    const balance = await getHypeBalance(provider, wallet);
     
     const hasFunds = balance > 0n;
     
