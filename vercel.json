@@ -7,6 +7,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/hyperpacks/cron-sweep",
+      "schedule": "0 * * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
