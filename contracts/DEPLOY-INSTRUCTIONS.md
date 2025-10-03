@@ -59,12 +59,12 @@ BACKEND_WALLET=0xF89D129C0Ae6D29727825EbBC47c6EDBd5B3787F
 
 **Mainnet:**
 - RPC: `https://api.hyperliquid.xyz/evm`
-- Chain ID: 998
+- Chain ID: 999
 - Explorer: `https://explorer.hyperliquid.xyz`
 
 **Testnet:**
 - RPC: `https://api.hyperliquid-testnet.xyz/evm`
-- Chain ID: 998
+- Chain ID: 999
 - Explorer: `https://explorer.hyperliquid-testnet.xyz`
 
 ---
