@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
+import { useAccount, useWalletClient, usePublicClient, useSwitchChain } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
@@ -12,10 +12,11 @@ const CONTRACT_ABI = [
 ];
 
 export default function EligibilityChecker() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { login, logout, ready, authenticated } = usePrivy();
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient({ chainId: 999 });
+  const publicClient = usePublicClient({ chainId: 999 });
+  const { switchChain } = useSwitchChain();
   
   const [eligibility, setEligibility] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -66,14 +67,13 @@ export default function EligibilityChecker() {
 
   const claimWhitelist = async () => {
     console.log('🔍 claimWhitelist called');
-    console.log('📊 State:', { isConnected, address, eligible: eligibility?.eligible, hasWalletClient: !!walletClient });
+    console.log('📊 State:', { isConnected, address, eligible: eligibility?.eligible, hasWalletClient: !!walletClient, connector: connector?.name });
     
-    if (!isConnected || !address || !eligibility?.eligible || !walletClient) {
+    if (!isConnected || !address || !eligibility?.eligible) {
       const missing = [];
       if (!isConnected) missing.push('not connected');
       if (!address) missing.push('no address');
       if (!eligibility?.eligible) missing.push('not eligible');
-      if (!walletClient) missing.push('no walletClient');
       console.error('❌ Cannot claim:', missing.join(', '));
       setError(`Cannot claim: ${missing.join(', ')}`);
       return;
@@ -98,11 +98,23 @@ export default function EligibilityChecker() {
       const claimData = await response.json();
       console.log('✅ Got claim data:', claimData);
 
-      console.log('🔄 Switching to HyperEVM chain...');
-      await walletClient.switchChain({ id: 999 });
+      console.log('🔄 Switching to HyperEVM chain 999...');
+      try {
+        await switchChain({ chainId: 999 });
+        console.log('✅ Switched to chain 999');
+      } catch (switchErr) {
+        console.warn('⚠️ Chain switch failed, continuing anyway:', switchErr.message);
+      }
 
-      console.log('📝 Sending transaction...');
-      const hash = await walletClient.writeContract({
+      console.log('⏳ Getting wallet client for chain 999...');
+      const client = walletClient || await connector?.getWalletClient?.({ chainId: 999 });
+      
+      if (!client) {
+        throw new Error('Unable to get wallet client for transaction signing. Please make sure your wallet supports HyperEVM (Chain ID: 999)');
+      }
+
+      console.log('✅ Got wallet client, sending transaction...');
+      const hash = await client.writeContract({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'claimWhitelist',
