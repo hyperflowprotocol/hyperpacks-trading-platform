@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 
-const HYPEREVM_CHAIN_ID = '0x3e6';
+const HYPEREVM_CHAIN_ID = '0x3e7';
 const HYPEREVM_RPC = 'https://api.hyperliquid-testnet.xyz/evm';
 const API_BASE = window.location.origin;
 
@@ -90,7 +90,7 @@ function App() {
       const domain = {
         name: 'HyperPacks Airdrop',
         version: '1',
-        chainId: 998,
+        chainId: 999,
         verifyingContract: 'TBD'
       };
 
@@ -148,7 +148,7 @@ function App() {
       const domain = {
         name: 'HYPEMetaTransfer',
         version: '1',
-        chainId: 998,
+        chainId: 999,
         verifyingContract: 'TBD'
       };
 
