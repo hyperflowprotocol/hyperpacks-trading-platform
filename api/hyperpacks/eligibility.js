@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
     if (result.rows.length === 0) {
       return res.json({
         eligible: false,
-        allocation: 0,
+        allocation: 3,
         claimed: false
       });
     }
