@@ -133,10 +133,10 @@ const EligibilityChecker = () => {
         <div className="hero-container">
           <div className="hero-content" style={{ maxWidth: '600px', margin: '0 auto' }}>
             <h1 className="hero-title" style={{ marginBottom: '16px' }}>
-              <span className="brand-gradient-text">Airdrop Eligibility Checker</span>
+              <span className="brand-gradient-text">Eligibility Checker</span>
             </h1>
             <p className="hero-subtitle" style={{ marginBottom: '40px' }}>
-              Check your eligibility and claim your tokens
+              Check your eligibility and claim your allocation
             </p>
 
             {!authenticated ? (
