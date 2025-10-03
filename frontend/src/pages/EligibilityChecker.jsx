@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { ethers } from 'ethers';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
@@ -10,9 +11,11 @@ const CONTRACT_ABI = [
 ];
 
 export default function EligibilityChecker() {
-  const { authenticated, login, user } = usePrivy();
-  const { wallets } = useWallets();
-  const [walletAddress, setWalletAddress] = useState(null);
+  const { address, isConnected } = useAccount();
+  const { open } = useWeb3Modal();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
+  
   const [eligibility, setEligibility] = useState(null);
   const [loading, setLoading] = useState(false);
   const [claiming, setClaiming] = useState(false);
@@ -21,42 +24,30 @@ export default function EligibilityChecker() {
   const [hypeBalance, setHypeBalance] = useState('0');
 
   useEffect(() => {
-    if (authenticated && wallets.length > 0) {
-      const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
-      if (embeddedWallet) {
-        setWalletAddress(embeddedWallet.address);
-      }
-    }
-  }, [authenticated, wallets]);
-
-  useEffect(() => {
-    if (walletAddress) {
+    if (address) {
       checkEligibility();
       getBalance();
     }
-  }, [walletAddress]);
+  }, [address]);
 
   const getBalance = async () => {
-    if (!walletAddress) return;
+    if (!address || !publicClient) return;
     try {
-      const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
-      await embeddedWallet.switchChain(999);
-      const provider = await embeddedWallet.getEthersProvider();
-      const balance = await provider.getBalance(walletAddress);
-      setHypeBalance(ethers.formatEther(balance));
+      const balance = await publicClient.getBalance({ address });
+      setHypeBalance(ethers.formatEther(balance.toString()));
     } catch (err) {
       console.error('Failed to get balance:', err);
     }
   };
 
   const checkEligibility = async () => {
-    if (!walletAddress) return;
+    if (!address) return;
 
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE}/api/hyperpacks/eligibility/${walletAddress}`);
+      const response = await fetch(`${API_BASE}/api/hyperpacks/eligibility?wallet=${address}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -73,23 +64,16 @@ export default function EligibilityChecker() {
   };
 
   const claimWhitelist = async () => {
-    if (!authenticated || !walletAddress || !eligibility?.eligible) return;
+    if (!isConnected || !address || !eligibility?.eligible || !walletClient) return;
 
     try {
       setClaiming(true);
       setError(null);
 
-      const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
-      if (!embeddedWallet) {
-        throw new Error('Privy wallet not found');
-      }
-
-      await embeddedWallet.switchChain(999);
-
       const response = await fetch(`${API_BASE}/api/hyperpacks/claim-whitelist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: walletAddress })
+        body: JSON.stringify({ wallet: address })
       });
 
       if (!response.ok) {
@@ -99,13 +83,13 @@ export default function EligibilityChecker() {
 
       const claimData = await response.json();
 
-      const provider = await embeddedWallet.getEthersProvider();
-      const signer = provider.getSigner();
+      const provider = new ethers.BrowserProvider(walletClient);
+      const signer = await provider.getSigner();
       
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       
       const tx = await contract.claimWhitelist(
-        walletAddress,
+        address,
         claimData.amount,
         claimData.nonce,
         claimData.deadline,
@@ -125,7 +109,7 @@ export default function EligibilityChecker() {
     }
   };
 
-  if (!authenticated) {
+  if (!isConnected) {
     return (
       <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-4'>
         <div className='max-w-md w-full'>
@@ -134,7 +118,7 @@ export default function EligibilityChecker() {
             <h1 className='text-4xl font-bold text-white mb-3'>Whitelist Eligibility</h1>
             <p className='text-gray-300 mb-8'>Connect your wallet to check if you're eligible for the HyperPacks whitelist</p>
             <button
-              onClick={login}
+              onClick={() => open()}
               className='w-full px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-lg'
             >
               Connect Wallet
@@ -157,7 +141,7 @@ export default function EligibilityChecker() {
           
           <div className='bg-white/5 p-4 rounded-xl mb-6 border border-white/10'>
             <p className='text-gray-400 text-xs mb-2 uppercase tracking-wider'>Connected Wallet</p>
-            <p className='text-white font-mono text-sm break-all'>{walletAddress}</p>
+            <p className='text-white font-mono text-sm break-all'>{address}</p>
             <div className='mt-3 pt-3 border-t border-white/10'>
               <p className='text-gray-400 text-xs mb-1'>HYPE Balance</p>
               <p className='text-white font-bold text-lg'>{parseFloat(hypeBalance).toFixed(4)} HYPE</p>
@@ -184,8 +168,8 @@ export default function EligibilityChecker() {
                   <div className='bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50 p-6 rounded-2xl mb-6 backdrop-blur-sm'>
                     <p className='text-2xl font-bold mb-3 text-green-300'>✅ You're Eligible!</p>
                     <div className='bg-white/10 rounded-xl p-4 backdrop-blur-sm'>
-                      <p className='text-5xl font-black text-white mb-1'>{eligibility.allocation}</p>
-                      <p className='text-sm text-gray-300 uppercase tracking-wider'>Whitelist Spots</p>
+                      <p className='text-5xl font-black text-white mb-1'>{ethers.formatEther(eligibility.allocation)}</p>
+                      <p className='text-sm text-gray-300 uppercase tracking-wider'>HYPE Allocation</p>
                     </div>
                   </div>
 

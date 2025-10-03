@@ -1,75 +1,36 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { PrivyProvider } from '@privy-io/react-auth'
+import { WagmiProvider } from 'wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createWeb3Modal } from '@web3modal/wagmi/react'
 import { Analytics } from '@vercel/analytics/react'
+import { config, projectId } from './config/wagmi'
 import App from './App.jsx'
 import './index.css'
 
+const queryClient = new QueryClient()
+
+createWeb3Modal({
+  wagmiConfig: config,
+  projectId,
+  enableAnalytics: true,
+  themeMode: 'dark',
+  themeVariables: {
+    '--w3m-accent': '#00ccdd',
+    '--w3m-border-radius-master': '4px'
+  }
+})
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <PrivyProvider 
-      appId="cmf0n2ra100qzl20b4gxr8ql0"
-      config={{
-        loginMethods: ['wallet', 'email', 'google'],
-        appearance: {
-          theme: 'dark',
-          accentColor: '#00ccdd',
-          showWalletLoginFirst: false,
-          walletList: ['detected_wallets', 'wallet_connect', 'metamask', 'coinbase_wallet', 'rainbow']
-        },
-        walletConnect: {
-          projectId: '2f05a7caa5b2d2169eb4dd2a9e2b35b0'
-        },
-        embeddedWallets: {
-          createOnLogin: 'all-users',
-          showWalletUIs: true
-        },
-        supportedChains: [
-          {
-            id: 999,
-            name: 'Hyperliquid',
-            network: 'hyperevm',
-            nativeCurrency: {
-              name: 'HYPE',
-              symbol: 'HYPE',
-              decimals: 18,
-            },
-            rpcUrls: {
-              default: {
-                http: [
-                  'https://1rpc.io/hyperliquid',
-                  'https://999.rpc.thirdweb.com', 
-                  'https://rpc.hyperliquid.xyz/evm'
-                ],
-              },
-              public: {
-                http: [
-                  'https://1rpc.io/hyperliquid',
-                  'https://999.rpc.thirdweb.com',
-                  'https://rpc.hyperliquid.xyz/evm'
-                ],
-              },
-            },
-            blockExplorers: {
-              default: {
-                name: 'HyperEVM Scanner',
-                url: 'https://hyperevmscan.io',
-              },
-            },
-            testnet: false,
-          }
-        ],
-        defaultChain: {
-          id: 999,
-          name: 'Hyperliquid'
-        }
-      }}
-    >
-      <BrowserRouter>
-        <App />
-        <Analytics />
-      </BrowserRouter>
-    </PrivyProvider>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+          <Analytics />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </WagmiProvider>
   </React.StrictMode>,
 )
