@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { ethers } from 'ethers';
+import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 const CONTRACT_ADDRESS = import.meta.env.VITE_WHITELIST_CLAIM_CONTRACT || '0x1f5b76EAA8e2A2eF854f177411627C9f3b632BC0';
@@ -83,10 +84,8 @@ export default function EligibilityChecker() {
 
       const claimData = await response.json();
 
-      // Switch to HyperEVM first
       await walletClient.switchChain({ id: 999 });
 
-      // Execute claim transaction using wagmi
       const hash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
@@ -102,7 +101,6 @@ export default function EligibilityChecker() {
         chain: { id: 999 }
       });
 
-      // Wait for confirmation
       await publicClient.waitForTransactionReceipt({ hash });
 
       setClaimed(true);
@@ -115,108 +113,220 @@ export default function EligibilityChecker() {
     }
   };
 
-  if (!isConnected) {
-    return (
-      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-4'>
-        <div className='max-w-md w-full'>
-          <div className='bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-2xl text-center'>
-            <div className='text-6xl mb-6'>🎁</div>
-            <h1 className='text-4xl font-bold text-white mb-3'>Whitelist Eligibility</h1>
-            <p className='text-gray-200 mb-8'>Connect your wallet to check if you're eligible for the HyperPacks whitelist</p>
-            <button
-              onClick={() => open()}
-              className='w-full px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-lg'
-            >
-              Connect Wallet
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-4'>
-      <div className='max-w-md w-full'>
-        <div className='bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-2xl'>
-          <div className='text-center mb-6'>
-            <div className='text-5xl mb-4'>🎁</div>
-            <h1 className='text-3xl font-bold text-white mb-2'>Whitelist Eligibility</h1>
-            <p className='text-gray-200 text-sm'>Check your whitelist status</p>
+    <div className='app'>
+      {/* Navigation - Same as Landing */}
+      <nav className='nav'>
+        <div className='nav-container'>
+          <Link to='/' className='nav-logo'>
+            <span className='logo-text brand-gradient-text'>HyperPack</span>
+          </Link>
+          <div className='nav-links'>
+            {isConnected && (
+              <span style={{color: '#b3b3b3', fontSize: '14px', fontFamily: 'JetBrains Mono, monospace'}}>
+                {address?.slice(0, 6)}...{address?.slice(-4)}
+              </span>
+            )}
           </div>
-          
-          <div className='bg-white/5 p-4 rounded-xl mb-6 border border-white/10'>
-            <p className='text-gray-400 text-xs mb-2 uppercase tracking-wider'>Connected Wallet</p>
-            <p className='text-white font-mono text-sm break-all'>{address}</p>
-            <div className='mt-3 pt-3 border-t border-white/10'>
-              <p className='text-gray-400 text-xs mb-1'>HYPE Balance</p>
-              <p className='text-white font-bold text-lg'>{parseFloat(hypeBalance).toFixed(4)} HYPE</p>
-            </div>
-          </div>
-
-          {loading && (
-            <div className='text-center text-white py-12'>
-              <div className='animate-spin rounded-full h-16 w-16 border-4 border-white/20 border-t-white mx-auto mb-4'></div>
-              <p className='text-gray-300'>Checking eligibility...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className='bg-red-500/10 border-2 border-red-500/50 text-red-200 p-4 rounded-xl mb-6 backdrop-blur-sm'>
-              <p className='font-medium'>⚠️ {error}</p>
-            </div>
-          )}
-
-          {eligibility && !loading && (
-            <div>
-              {eligibility.eligible ? (
-                <div className='text-center'>
-                  <div className='bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50 p-6 rounded-2xl mb-6 backdrop-blur-sm'>
-                    <p className='text-2xl font-bold mb-3 text-green-300'>✅ You're Eligible!</p>
-                    <div className='bg-white/10 rounded-xl p-4 backdrop-blur-sm'>
-                      <p className='text-5xl font-black text-white mb-1'>{ethers.formatEther(eligibility.allocation)}</p>
-                      <p className='text-sm text-gray-300 uppercase tracking-wider'>HYPE Allocation</p>
-                    </div>
-                  </div>
-
-                  {eligibility.claimed ? (
-                    <div className='bg-blue-500/10 border-2 border-blue-500/50 text-blue-200 p-4 rounded-xl backdrop-blur-sm'>
-                      <p className='font-semibold text-lg'>✅ Already Claimed</p>
-                      <p className='text-sm text-blue-300 mt-1'>Your whitelist has been activated</p>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={claimWhitelist}
-                      disabled={claiming}
-                      className='w-full px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed shadow-xl'
-                    >
-                      {claiming ? (
-                        <span className='flex items-center justify-center gap-2'>
-                          <div className='animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-t-white'></div>
-                          Claiming...
-                        </span>
-                      ) : (
-                        'Claim Your Whitelist'
-                      )}
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className='bg-red-500/10 border-2 border-red-500/50 p-6 rounded-2xl text-center backdrop-blur-sm'>
-                  <p className='text-2xl font-bold text-red-300 mb-2'>❌ Not Eligible</p>
-                  <p className='text-sm text-red-200/80'>This wallet is not on the whitelist</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {claimed && (
-            <div className='mt-6 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500/50 p-4 rounded-xl backdrop-blur-sm animate-pulse'>
-              <p className='text-green-300 font-bold text-center'>🎉 Whitelist Claimed Successfully!</p>
-            </div>
-          )}
         </div>
-      </div>
+      </nav>
+
+      {/* Main Content */}
+      <section className='hero'>
+        <div className='hero-container'>
+          <div style={{flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%'}}>
+            <h1 className='hero-title' style={{marginBottom: '20px'}}>
+              <span className='brand-gradient-text'>Whitelist Eligibility</span>
+            </h1>
+            <p className='hero-subtitle' style={{marginBottom: '40px'}}>
+              Check your eligibility and claim your tokens
+            </p>
+
+            {!isConnected ? (
+              <div style={{maxWidth: '500px'}}>
+                <h2 style={{fontSize: '28px', fontWeight: '600', color: '#b3b3b3', marginBottom: '16px'}}>
+                  Connect Your Wallet
+                </h2>
+                <p style={{color: '#666666', marginBottom: '32px'}}>
+                  Please connect your wallet to check airdrop eligibility
+                </p>
+                <button onClick={() => open()} className='btn-primary'>
+                  Connect Wallet
+                </button>
+              </div>
+            ) : (
+              <div style={{maxWidth: '700px'}}>
+                {/* Wallet Info Card */}
+                <div style={{
+                  background: '#1f1f1f',
+                  border: '1px solid #333333',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  marginBottom: '24px'
+                }}>
+                  <p style={{color: '#666666', fontSize: '12px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
+                    Connected Wallet
+                  </p>
+                  <p style={{color: '#ffffff', fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', wordBreak: 'break-all', marginBottom: '16px'}}>
+                    {address}
+                  </p>
+                  <div style={{borderTop: '1px solid #333333', paddingTop: '16px'}}>
+                    <p style={{color: '#666666', fontSize: '12px', marginBottom: '4px'}}>HYPE Balance</p>
+                    <p style={{color: '#ffffff', fontSize: '20px', fontWeight: '700'}}>
+                      {parseFloat(hypeBalance).toFixed(4)} HYPE
+                    </p>
+                  </div>
+                </div>
+
+                {loading && (
+                  <div style={{textAlign: 'center', padding: '48px 0'}}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      border: '4px solid #333333',
+                      borderTopColor: '#00ccdd',
+                      borderRadius: '50%',
+                      margin: '0 auto 16px',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    <p style={{color: '#666666'}}>Checking eligibility...</p>
+                  </div>
+                )}
+
+                {error && (
+                  <div style={{
+                    background: 'rgba(255, 68, 68, 0.1)',
+                    border: '1px solid rgba(255, 68, 68, 0.3)',
+                    color: '#ff4444',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    marginBottom: '24px'
+                  }}>
+                    <p>⚠️ {error}</p>
+                  </div>
+                )}
+
+                {eligibility && !loading && (
+                  <div>
+                    {eligibility.eligible ? (
+                      <div>
+                        <div style={{
+                          background: 'rgba(0, 255, 136, 0.1)',
+                          border: '1px solid rgba(0, 255, 136, 0.3)',
+                          borderRadius: '12px',
+                          padding: '24px',
+                          marginBottom: '24px'
+                        }}>
+                          <p style={{fontSize: '24px', fontWeight: '700', color: '#00ff88', marginBottom: '16px'}}>
+                            ✅ You're Eligible!
+                          </p>
+                          <div style={{
+                            background: '#1f1f1f',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            textAlign: 'center'
+                          }}>
+                            <p style={{fontSize: '48px', fontWeight: '900', color: '#ffffff', marginBottom: '8px'}}>
+                              {ethers.formatEther(eligibility.allocation)}
+                            </p>
+                            <p style={{fontSize: '12px', color: '#666666', textTransform: 'uppercase', letterSpacing: '1px'}}>
+                              HYPE Allocation
+                            </p>
+                          </div>
+                        </div>
+
+                        {eligibility.claimed ? (
+                          <div style={{
+                            background: 'rgba(0, 204, 221, 0.1)',
+                            border: '1px solid rgba(0, 204, 221, 0.3)',
+                            color: '#00ccdd',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            textAlign: 'center'
+                          }}>
+                            <p style={{fontSize: '18px', fontWeight: '600'}}>✅ Already Claimed</p>
+                            <p style={{fontSize: '14px', color: '#0099cc', marginTop: '4px'}}>
+                              Your whitelist has been activated
+                            </p>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={claimWhitelist}
+                            disabled={claiming}
+                            className='btn-primary'
+                            style={{width: '100%'}}
+                          >
+                            {claiming ? 'Claiming...' : 'Claim Your Whitelist'}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{
+                        background: 'rgba(255, 68, 68, 0.1)',
+                        border: '1px solid rgba(255, 68, 68, 0.3)',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{fontSize: '24px', fontWeight: '700', color: '#ff4444', marginBottom: '8px'}}>
+                          ❌ Not Eligible
+                        </p>
+                        <p style={{fontSize: '14px', color: '#ff6666'}}>
+                          This wallet is not on the whitelist
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {claimed && (
+                  <div style={{
+                    marginTop: '24px',
+                    background: 'rgba(0, 255, 136, 0.1)',
+                    border: '1px solid rgba(0, 255, 136, 0.3)',
+                    color: '#00ff88',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{fontWeight: '700'}}>🎉 Whitelist Claimed Successfully!</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer - Same as Landing */}
+      <footer style={{
+        borderTop: '1px solid #333333',
+        padding: '40px 24px',
+        marginTop: '80px'
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{display: 'flex', gap: '32px'}}>
+            <a href='#' style={{color: '#666666', textDecoration: 'none', transition: 'color 0.2s'}} onMouseEnter={e => e.target.style.color = '#ffffff'} onMouseLeave={e => e.target.style.color = '#666666'}>X</a>
+            <a href='#' style={{color: '#666666', textDecoration: 'none', transition: 'color 0.2s'}} onMouseEnter={e => e.target.style.color = '#ffffff'} onMouseLeave={e => e.target.style.color = '#666666'}>Telegram</a>
+            <a href='#' style={{color: '#666666', textDecoration: 'none', transition: 'color 0.2s'}} onMouseEnter={e => e.target.style.color = '#ffffff'} onMouseLeave={e => e.target.style.color = '#666666'}>Discord</a>
+            <a href='#' style={{color: '#666666', textDecoration: 'none', transition: 'color 0.2s'}} onMouseEnter={e => e.target.style.color = '#ffffff'} onMouseLeave={e => e.target.style.color = '#666666'}>Docs</a>
+          </div>
+          <p style={{color: '#666666', fontSize: '14px'}}>© 2025 HyperPack</p>
+        </div>
+      </footer>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
