@@ -11,36 +11,63 @@ import './index.css'
 
 const queryClient = new QueryClient()
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    if (error?.message?.includes('not an Object') || error?.message?.includes('"name"')) {
+      console.warn('Suppressing Privy SDK error:', error.message);
+      return { hasError: false };
+    }
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    if (!error?.message?.includes('not an Object') && !error?.message?.includes('"name"')) {
+      console.error('Error:', error, errorInfo);
+    }
+  }
+
+  render() {
+    return this.props.children;
+  }
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <PrivyProvider
-      appId={import.meta.env.VITE_PRIVY_APP_ID || 'cmf0n2ra100qzl20b4gxr8ql0'}
-      config={{
-        appearance: {
-          theme: 'dark',
-          accentColor: '#00ccdd',
-        },
-        loginMethods: ['wallet'],
-        embeddedWallets: {
-          createOnLogin: 'off',
-        },
-        externalWallets: {
-          coinbaseWallet: {
-            connectionOptions: 'all',
+    <ErrorBoundary>
+      <PrivyProvider
+        appId={import.meta.env.VITE_PRIVY_APP_ID || 'cmf0n2ra100qzl20b4gxr8ql0'}
+        config={{
+          appearance: {
+            theme: 'dark',
+            accentColor: '#00ccdd',
           },
-        },
-        defaultChain: hyperEVM,
-        supportedChains: [hyperEVM],
-      }}
-    >
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
-          <BrowserRouter>
-            <App />
-            <Analytics />
-          </BrowserRouter>
-        </WagmiProvider>
-      </QueryClientProvider>
-    </PrivyProvider>
+          loginMethods: ['wallet'],
+          embeddedWallets: {
+            createOnLogin: 'off',
+          },
+          externalWallets: {
+            coinbaseWallet: {
+              connectionOptions: 'all',
+            },
+          },
+          defaultChain: hyperEVM,
+          supportedChains: [hyperEVM],
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={config}>
+            <BrowserRouter>
+              <App />
+              <Analytics />
+            </BrowserRouter>
+          </WagmiProvider>
+        </QueryClientProvider>
+      </PrivyProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 )
