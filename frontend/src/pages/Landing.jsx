@@ -50,22 +50,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Airdrop Section */}
-      <section className="airdrop-cta-section">
-        <div className="container">
-          <div className="airdrop-cta-card">
-            <div className="airdrop-cta-content">
-              <div className="airdrop-icon">🎁</div>
-              <h2 className="brand-gradient-text">Claim Your Airdrop</h2>
-              <p>Check if you're eligible for HyperPacks airdrop tokens</p>
-              <Link to="/airdrop" className="btn-primary">
-                Check Eligibility
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <Footer />
 
     </div>
