@@ -97,7 +97,6 @@ export default function EligibilityChecker() {
           BigInt(claimData.deadline),
           claimData.signature
         ],
-        value: BigInt(claimData.amount),
         chain: { id: 999 }
       });
 

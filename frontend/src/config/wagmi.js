@@ -1,7 +1,8 @@
 import { http } from 'wagmi'
+import { defineChain } from 'viem'
 import { createConfig } from '@privy-io/wagmi'
 
-export const hyperEVM = {
+export const hyperEVM = defineChain({
   id: 999,
   name: 'HyperEVM',
   nativeCurrency: {
@@ -13,9 +14,6 @@ export const hyperEVM = {
     default: {
       http: ['https://rpc.hyperliquid.xyz/evm'],
     },
-    public: {
-      http: ['https://rpc.hyperliquid.xyz/evm'],
-    },
   },
   blockExplorers: {
     default: {
@@ -23,8 +21,7 @@ export const hyperEVM = {
       url: 'https://hyperevmscan.io',
     },
   },
-  testnet: false,
-}
+})
 
 export const config = createConfig({
   chains: [hyperEVM],
