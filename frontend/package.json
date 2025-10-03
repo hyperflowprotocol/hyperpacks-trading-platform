@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.56.2",
+    "@walletconnect/ethereum-provider": "^2.16.1",
     "@web3modal/wagmi": "^5.1.11",
     "@vercel/analytics": "^1.5.0",
     "@vitejs/plugin-react": "^4.0.3",
