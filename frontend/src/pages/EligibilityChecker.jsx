@@ -61,8 +61,58 @@ const EligibilityChecker = () => {
         name: 'HyperPacks Whitelist',
         version: '1',
         chainId: 999,
-        verifyingContract: process.env.REACT_APP_AUTOSWEEP_CONTRACT || '0x0000000000000000000000000000000000000000'
+        verifyingContract: process.env.REACT_APP_CLAIM_DISTRIBUTE_CONTRACT || '0x0000000000000000000000000000000000000000'
       };
+
+      const types = {
+        ClaimWhitelist: [
+          { name: 'claimer', type: 'address' },
+          { name: 'amount', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' }
+        ]
+      };
+
+      const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const nonce = Date.now();
+
+      const value = {
+        claimer: walletAddress,
+        amount: eligibility.allocation,
+        nonce: nonce,
+        deadline: deadline
+      };
+
+      const signature = await signer._signTypedData(domain, types, value);
+
+      const response = await fetch(`${API_BASE}/api/hyperpacks/claim-whitelist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          claimer: walletAddress,
+          amount: eligibility.allocation,
+          nonce: nonce,
+          deadline: deadline,
+          signature: signature
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Claim failed');
+      }
+
+      setClaimed(true);
+      alert('Success! You received ' + eligibility.allocation + ' Whitelist!');
+      setTimeout(() => checkEligibility(), 2000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to claim whitelist');
+    } finally {
+      setClaiming(false);
+    }
+  }
 
       const types = {
         ClaimWhitelist: [
