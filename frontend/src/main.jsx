@@ -20,8 +20,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           theme: 'dark',
           accentColor: '#00ccdd',
         },
+        loginMethods: ['wallet'],
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          createOnLogin: 'off',
+        },
+        externalWallets: {
+          coinbaseWallet: {
+            connectionOptions: 'all',
+          },
         },
       }}
     >
