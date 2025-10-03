@@ -47,7 +47,7 @@ export default function EligibilityChecker() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE}/api/hyperpacks/eligibility/${address}`);
+      const response = await fetch(`${API_BASE}/api/hyperpacks/eligibility?wallet=${address}`);
       const data = await response.json();
 
       if (response.ok) {
