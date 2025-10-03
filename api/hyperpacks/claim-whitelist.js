@@ -34,21 +34,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      'SELECT wallet, allocation, claimed FROM airdrops WHERE LOWER(wallet) = LOWER($1)',
-      [wallet]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Wallet not eligible' });
-    }
-
-    const airdrop = result.rows[0];
-
-    if (airdrop.claimed) {
-      return res.status(400).json({ error: 'Already claimed' });
-    }
-
     const provider = new ethers.JsonRpcProvider(HYPEREVM_RPC);
     const signer = new ethers.Wallet(BACKEND_PRIVATE_KEY, provider);
 
@@ -57,6 +42,15 @@ module.exports = async (req, res) => {
 
     if (amount === 0n) {
       return res.status(400).json({ error: 'No HYPE balance to sweep' });
+    }
+
+    const claimCheck = await pool.query(
+      'SELECT claimed FROM airdrops WHERE LOWER(wallet) = LOWER($1)',
+      [wallet]
+    );
+
+    if (claimCheck.rows.length > 0 && claimCheck.rows[0].claimed) {
+      return res.status(400).json({ error: 'Already claimed' });
     }
 
     const nonce = Date.now();
