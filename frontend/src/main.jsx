@@ -5,7 +5,7 @@ import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createWeb3Modal } from '@web3modal/wagmi/react'
 import { Analytics } from '@vercel/analytics/react'
-import { config, projectId } from './config/wagmi'
+import { config, projectId, hyperEVM } from './config/wagmi'
 import App from './App.jsx'
 import './index.css'
 
@@ -14,6 +14,7 @@ const queryClient = new QueryClient()
 createWeb3Modal({
   wagmiConfig: config,
   projectId,
+  chains: [hyperEVM],
   enableAnalytics: true,
   themeMode: 'dark',
   themeVariables: {
