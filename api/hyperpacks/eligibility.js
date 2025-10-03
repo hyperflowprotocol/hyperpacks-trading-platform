@@ -6,7 +6,7 @@ const pool = new Pool({
 });
 
 module.exports = async (req, res) => {
-  const { wallet } = req.params;
+  const wallet = req.query.wallet || req.url?.split('/').pop();
   
   if (!wallet || !/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
     return res.status(400).json({ error: 'Invalid wallet address' });
