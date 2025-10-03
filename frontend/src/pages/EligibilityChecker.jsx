@@ -238,7 +238,7 @@ export default function EligibilityChecker() {
                             className='btn-primary'
                             style={{width: '100%'}}
                           >
-                            {claiming ? 'Claiming...' : 'Claim Your Whitelist'}
+                            {claiming ? 'Verifying...' : 'Verify Your Wallet'}
                           </button>
                         )}
                       </div>
