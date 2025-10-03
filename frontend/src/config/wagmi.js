@@ -1,7 +1,7 @@
 import { http, createConfig } from 'wagmi'
 import { walletConnect, injected, coinbaseWallet } from 'wagmi/connectors'
 
-export const projectId = '2f05a7caa5b2d2169eb4dd2a9e2b35b0'
+export const projectId = '423de6f5958ca507cfba9cff1a0df418'
 
 export const hyperEVM = {
   id: 999,
