@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { usePrivy } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
 
@@ -13,7 +13,7 @@ const CONTRACT_ABI = [
 
 export default function EligibilityChecker() {
   const { address, isConnected } = useAccount();
-  const { open } = useWeb3Modal();
+  const { login, logout, ready, authenticated } = usePrivy();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
   
@@ -150,7 +150,7 @@ export default function EligibilityChecker() {
                 <p style={{color: '#666666', marginBottom: '32px'}}>
                   Please connect your wallet to check airdrop eligibility
                 </p>
-                <button onClick={() => open()} className='btn-primary'>
+                <button onClick={login} className='btn-primary' disabled={!ready}>
                   Connect Wallet
                 </button>
               </div>
