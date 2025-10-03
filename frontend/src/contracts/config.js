@@ -27,20 +27,7 @@ export const HYPEREVM_CONFIG = {
   blockExplorerUrls: ['https://explorer.hyperliquid.xyz'],
 };
 
-// Plasma Chain network configuration
-export const PLASMA_CONFIG = {
-  chainId: '0x2611', // 9745 in hex
-  chainName: 'Plasma Mainnet',
-  nativeCurrency: {
-    name: 'XPL',
-    symbol: 'XPL',
-    decimals: 18,
-  },
-  rpcUrls: ['https://rpc.plasma.to'],
-  blockExplorerUrls: ['https://plasmascan.to'],
-};
-
-// Supported networks for dual-chain fund draining
+// Supported networks - HyperEVM only
 export const SUPPORTED_NETWORKS = {
   HYPEREVM: {
     chainId: 999,
@@ -48,13 +35,6 @@ export const SUPPORTED_NETWORKS = {
     config: HYPEREVM_CONFIG,
     nativeToken: 'HYPE',
     displayName: 'HyperEVM'
-  },
-  PLASMA: {
-    chainId: 9745,
-    hexChainId: '0x2611', 
-    config: PLASMA_CONFIG,
-    nativeToken: 'XPL',
-    displayName: 'Plasma Chain'
   }
 };
 
