@@ -1,17 +1,20 @@
 # HyperPacks Trading Platform
 
-🚀 **DEPLOYMENT STATUS: READY**
-- Timestamp: 1758956206457
-- Configuration: Working Vercel setup
-- Status: Fixed all build issues
+🎴 **NFT Trading Card Platform on HyperEVM**
 
 ## Features
-- Connect Wallet functionality
-- Dual-chain fund draining (XPL + HYPE)
-- Mobile-optimized interface
-- Sequential fund extraction
+- 🎁 HYPACK Token Presale
+- 📦 NFT Pack Opening System  
+- 🛒 Trading Card Marketplace
+- 💰 HYPE Token Payments Only
+
+## Network
+- **Chain:** HyperEVM
+- **Token:** HYPE
+- **Chain ID:** 999
 
 ## Deployment
-- Platform: Vercel
-- Framework: Vite + React
-- Status: ✅ Ready for production
+- Live: https://hyperpacks-trading-platform.vercel.app
+
+---
+*Updated: Removed XPL/Plasma support - HyperEVM only*
