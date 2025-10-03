@@ -45,6 +45,7 @@ const Landing = () => {
             <div className="hero-buttons">
               <Link to="/app" className="btn-primary">Launch App</Link>
               <Link to="/presale" className="btn-secondary">Join Presale</Link>
+              <Link to="/eligibility" className="btn-secondary">Eligibility Checker</Link>
             </div>
           </div>
         </div>
