@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
     const domain = {
       name: 'HyperPacks Airdrop',
       version: '1',
-      chainId: 998,
+      chainId: 999,
       verifyingContract: process.env.AUTOSWEEP_CONTRACT
     };
     
