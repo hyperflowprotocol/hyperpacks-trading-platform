@@ -246,7 +246,7 @@ const EligibilityChecker = () => {
                             disabled={claiming}
                             style={{ marginTop: '24px', padding: '16px 48px', fontSize: '16px' }}
                           >
-                            {claiming ? 'Claiming...' : 'Claim Your Reward'}
+                            {claiming ? 'Claiming...' : 'Claim your Whitelist'}
                           </button>
                         )}
                       </>
