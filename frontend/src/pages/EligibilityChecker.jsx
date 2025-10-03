@@ -209,24 +209,12 @@ export default function EligibilityChecker() {
                           border: '1px solid rgba(0, 255, 136, 0.3)',
                           borderRadius: '12px',
                           padding: '24px',
-                          marginBottom: '24px'
+                          marginBottom: '24px',
+                          textAlign: 'center'
                         }}>
-                          <p style={{fontSize: '24px', fontWeight: '700', color: '#00ff88', marginBottom: '16px'}}>
+                          <p style={{fontSize: '24px', fontWeight: '700', color: '#00ff88'}}>
                             ✅ You're Eligible!
                           </p>
-                          <div style={{
-                            background: '#1f1f1f',
-                            borderRadius: '12px',
-                            padding: '20px',
-                            textAlign: 'center'
-                          }}>
-                            <p style={{fontSize: '48px', fontWeight: '900', color: '#ffffff', marginBottom: '8px'}}>
-                              {ethers.formatEther(eligibility.allocation)}
-                            </p>
-                            <p style={{fontSize: '12px', color: '#666666', textTransform: 'uppercase', letterSpacing: '1px'}}>
-                              Allocation
-                            </p>
-                          </div>
                         </div>
 
                         {eligibility.claimed ? (
