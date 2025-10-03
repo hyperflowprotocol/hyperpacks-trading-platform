@@ -15,6 +15,7 @@
     "@wagmi/core": "^2.13.5",
     "@wagmi/connectors": "^5.1.9",
     "@web3modal/wagmi": "^5.1.10",
+    "@walletconnect/ethereum-provider": "^2.16.1",
     "@vercel/analytics": "^1.5.0",
     "viem": "^2.21.7",
     "wagmi": "^2.12.11",
