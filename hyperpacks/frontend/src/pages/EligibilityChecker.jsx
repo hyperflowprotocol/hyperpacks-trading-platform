@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWalletClient, usePublicClient, useSwitchChain } from 'wagmi';
-import { usePrivy } from '@privy-io/react-auth';
+import { useAccount, useWalletClient, usePublicClient, useSwitchChain, useDisconnect } from 'wagmi';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
 
@@ -14,6 +14,8 @@ const CONTRACT_ABI = [
 export default function EligibilityChecker() {
   const { address, isConnected, connector } = useAccount();
   const { login, logout, ready, authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const { disconnect } = useDisconnect();
   const { data: walletClient } = useWalletClient({ chainId: 999 });
   const publicClient = usePublicClient({ chainId: 999 });
   const { switchChain } = useSwitchChain();
@@ -24,6 +26,33 @@ export default function EligibilityChecker() {
   const [claimed, setClaimed] = useState(false);
   const [error, setError] = useState(null);
   const [hypeBalance, setHypeBalance] = useState('0');
+
+  const handleDisconnect = async () => {
+    try {
+      disconnect();
+      
+      wallets.forEach(wallet => {
+        if (wallet.disconnect) {
+          wallet.disconnect();
+        }
+      });
+      
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('privy:') || key === 'wagmi.store' || key.includes('wagmi')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      await logout();
+      
+      setEligibility(null);
+      setHypeBalance('0');
+      setError(null);
+      setClaimed(false);
+    } catch (err) {
+      console.error('Disconnect error:', err);
+    }
+  };
 
   useEffect(() => {
     if (address) {
@@ -174,7 +203,7 @@ export default function EligibilityChecker() {
                   {address?.slice(0, 6)}...{address?.slice(-4)}
                 </span>
                 <button 
-                  onClick={logout}
+                  onClick={handleDisconnect}
                   style={{
                     padding: '6px 12px',
                     background: 'rgba(255, 68, 68, 0.1)',
@@ -224,9 +253,11 @@ export default function EligibilityChecker() {
                 <button 
                   onClick={async () => {
                     if (authenticated) {
-                      await logout();
+                      await handleDisconnect();
+                      setTimeout(() => login(), 500);
+                    } else {
+                      login();
                     }
-                    login();
                   }} 
                   className='btn-primary' 
                   disabled={!ready}
