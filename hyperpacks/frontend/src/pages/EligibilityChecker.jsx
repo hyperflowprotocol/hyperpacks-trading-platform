@@ -1,4 +1,3 @@
-// Build timestamp: 2025-10-04T05:29:09.371Z
 import React, { useState, useEffect } from 'react';
 import { useAccount, useWalletClient, usePublicClient, useSwitchChain } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
