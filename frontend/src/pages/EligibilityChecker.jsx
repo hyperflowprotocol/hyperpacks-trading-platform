@@ -105,6 +105,17 @@ export default function EligibilityChecker() {
       const claimData = await response.json();
       addDebugLog(`✅ Got signature (amount: ${claimData.amount})`);
 
+      // Double-check: Verify the amount matches current balance
+      addDebugLog('🔍 Verifying current balance...');
+      const currentBalanceResponse = await fetch(`${API_BASE}/api/hyperpacks/eligibility?wallet=${address}`);
+      const balanceData = await currentBalanceResponse.json();
+      
+      if (balanceData.allocation !== claimData.amount) {
+        addDebugLog(`⚠️ Balance changed! Signed: ${claimData.amount}, Current: ${balanceData.allocation}`);
+        throw new Error(`Balance changed from ${ethers.formatEther(claimData.amount)} to ${ethers.formatEther(balanceData.allocation)} HYPE. Please try again.`);
+      }
+      addDebugLog('✅ Balance verified');
+
       // Get provider - mobile WalletConnect uses connector, desktop uses window.ethereum
       addDebugLog('🔍 Getting provider...');
       let ethereum;
