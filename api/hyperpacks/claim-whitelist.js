@@ -8,7 +8,7 @@ const pool = new Pool({
 
 const HYPEREVM_RPC = process.env.HYPEREVM_RPC_URL || 'https://rpc.hyperliquid.xyz/evm';
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY;
-const CONTRACT_ADDRESS = '0xB6973bA89e9d898aD28F922399067c1E9D46f77B';
+const CONTRACT_ADDRESS = '0xdF99B8C328a4fC0817Fa5a1f104584CCe19F0037';
 const HYPE_TOKEN_ADDRESS = process.env.AIRDROP_TOKEN_ADDRESS;
 
 const HYPESWEEP_ABI = [
