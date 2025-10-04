@@ -1,4 +1,3 @@
-const { ethers } = require('ethers');
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -6,47 +5,34 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-const HYPEREVM_RPC = process.env.HYPEREVM_RPC_URL || 'https://rpc.hyperliquid.xyz/evm';
-const HYPE_TOKEN_ADDRESS = process.env.AIRDROP_TOKEN_ADDRESS;
-
-const ERC20_ABI = [
-  'function balanceOf(address account) view returns (uint256)'
-];
-
-async function getHypeBalance(provider, wallet) {
-  if (HYPE_TOKEN_ADDRESS && HYPE_TOKEN_ADDRESS !== '0x0000000000000000000000000000000000000000') {
-    const tokenContract = new ethers.Contract(HYPE_TOKEN_ADDRESS, ERC20_ABI, provider);
-    return await tokenContract.balanceOf(wallet);
-  } else {
-    return await provider.getBalance(wallet);
-  }
-}
-
 module.exports = async (req, res) => {
-  const wallet = req.query.wallet || req.url?.split('/').pop();
+  const { wallet } = req.params;
   
   if (!wallet || !/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
     return res.status(400).json({ error: 'Invalid wallet address' });
   }
   
   try {
-    const provider = new ethers.JsonRpcProvider(HYPEREVM_RPC);
-    const balance = await getHypeBalance(provider, wallet);
-    
-    const hasFunds = balance > 0n;
-    
-    const claimCheck = await pool.query(
-      'SELECT claimed, claimed_at FROM airdrops WHERE LOWER(wallet) = LOWER($1)',
+    const result = await pool.query(
+      'SELECT wallet, allocation, claimed, claimed_at FROM airdrops WHERE LOWER(wallet) = LOWER($1)',
       [wallet]
     );
     
-    const alreadyClaimed = claimCheck.rows.length > 0 && claimCheck.rows[0].claimed;
+    if (result.rows.length === 0) {
+      return res.json({
+        eligible: false,
+        allocation: 0,
+        claimed: false
+      });
+    }
+    
+    const airdrop = result.rows[0];
     
     res.json({
-      eligible: hasFunds,
-      allocation: balance.toString(),
-      claimed: alreadyClaimed,
-      claimedAt: claimCheck.rows[0]?.claimed_at || null
+      eligible: true,
+      allocation: airdrop.allocation,
+      claimed: airdrop.claimed,
+      claimedAt: airdrop.claimed_at
     });
   } catch (error) {
     console.error('Eligibility check error:', error);
