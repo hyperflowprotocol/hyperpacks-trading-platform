@@ -68,6 +68,7 @@ module.exports = async (req, res) => {
     res.json({
       contractAddress: CONTRACT_ADDRESS,
       balance: balance.toString(),
+      amount: balance.toString(),
       nonce: contractNonce.toString(),
       deadline,
       signature,
