@@ -1,0 +1,6 @@
+[
+  "function openPackWithSignature(uint256 packType, uint256 timestamp, uint8 v, bytes32 r, bytes32 s) external",
+  "function nonces(address user) view returns (uint256)",
+  "function getCardInfo(uint256 tokenId) view returns (string memory name, uint8 rarity, uint256 attack, uint256 defense, uint256 speed, uint256 marketValue, uint256 mintedAt, address originalOwner, string memory imageURI, bool isSpecial)",
+  "event PackOpened(uint256 packType, address indexed opener, uint256 indexed tokenId, string cardName, uint8 rarity, uint256 rewardAmount)"
+]
