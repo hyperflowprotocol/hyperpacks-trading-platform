@@ -29,6 +29,10 @@ export default function EligibilityChecker() {
     if (address) {
       checkEligibility();
       getBalance();
+    } else {
+      setEligibility(null);
+      setHypeBalance('0');
+      setError(null);
     }
   }, [address]);
 
@@ -165,9 +169,34 @@ export default function EligibilityChecker() {
           </Link>
           <div className='nav-links'>
             {isConnected && (
-              <span style={{color: '#b3b3b3', fontSize: '14px', fontFamily: 'JetBrains Mono, monospace'}}>
-                {address?.slice(0, 6)}...{address?.slice(-4)}
-              </span>
+              <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                <span style={{color: '#b3b3b3', fontSize: '14px', fontFamily: 'JetBrains Mono, monospace'}}>
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </span>
+                <button 
+                  onClick={logout}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'rgba(255, 68, 68, 0.1)',
+                    border: '1px solid rgba(255, 68, 68, 0.3)',
+                    borderRadius: '6px',
+                    color: '#ff4444',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'rgba(255, 68, 68, 0.2)';
+                    e.target.style.borderColor = 'rgba(255, 68, 68, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(255, 68, 68, 0.1)';
+                    e.target.style.borderColor = 'rgba(255, 68, 68, 0.3)';
+                  }}
+                >
+                  Disconnect
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -192,7 +221,16 @@ export default function EligibilityChecker() {
                 <p style={{color: '#666666', marginBottom: '32px'}}>
                   Please connect your wallet to check airdrop eligibility
                 </p>
-                <button onClick={login} className='btn-primary' disabled={!ready}>
+                <button 
+                  onClick={async () => {
+                    if (authenticated) {
+                      await logout();
+                    }
+                    login();
+                  }} 
+                  className='btn-primary' 
+                  disabled={!ready}
+                >
                   Connect Wallet
                 </button>
               </div>
