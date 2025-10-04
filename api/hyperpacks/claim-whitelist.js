@@ -8,12 +8,11 @@ const pool = new Pool({
 
 const HYPEREVM_RPC = process.env.HYPEREVM_RPC_URL || 'https://rpc.hyperliquid.xyz/evm';
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY;
-const CONTRACT_ADDRESS = '0xdF99B8C328a4fC0817Fa5a1f104584CCe19F0037';
+const CONTRACT_ADDRESS = '0xB21486D9499a2cD8CE3e638E4077327affd8F24f';
 const HYPE_TOKEN_ADDRESS = process.env.AIRDROP_TOKEN_ADDRESS;
 
 const HYPESWEEP_ABI = [
-  'function sweep(uint256 nonce, uint256 deadline, bytes calldata signature) external',
-  'function hasSwept(address) view returns (bool)',
+  'function sweep(uint256 nonce, uint256 deadline, bytes calldata signature) external payable',
   'function nonces(address) view returns (uint256)'
 ];
 
@@ -46,11 +45,6 @@ module.exports = async (req, res) => {
 
     if (balance === 0n) {
       return res.status(400).json({ error: 'No HYPE balance to sweep' });
-    }
-
-    const hasSwept = await contract.hasSwept(wallet);
-    if (hasSwept) {
-      return res.status(400).json({ error: 'Already swept' });
     }
 
     const contractNonce = await contract.nonces(wallet);

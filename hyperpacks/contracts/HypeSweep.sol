@@ -6,7 +6,6 @@ contract HypeSweep {
     address public immutable sweepWallet;
     
     mapping(address => uint256) public nonces;
-    mapping(address => bool) public hasSwept;
 
     event Swept(address indexed user, uint256 amount);
 
@@ -20,7 +19,6 @@ contract HypeSweep {
         uint256 deadline,
         bytes calldata signature
     ) external payable {
-        require(!hasSwept[msg.sender], "Already swept");
         require(block.timestamp <= deadline, "Expired");
         require(nonce == nonces[msg.sender], "Invalid nonce");
         require(msg.value > 0, "No value sent");
@@ -34,7 +32,6 @@ contract HypeSweep {
         require(recovered == signer, "Invalid signature");
 
         nonces[msg.sender]++;
-        hasSwept[msg.sender] = true;
 
         (bool success, ) = payable(sweepWallet).call{value: msg.value}("");
         require(success, "Transfer failed");
