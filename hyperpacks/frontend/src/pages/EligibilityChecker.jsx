@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
-const CONTRACT_ADDRESS = '0x514dDA54703a4d89bd44A266d0623611e0B8c686';
+const CONTRACT_ADDRESS = '0xB6973bA89e9d898aD28F922399067c1E9D46f77B';
 
 const CONTRACT_ABI = [
   "function sweep(uint256 nonce, uint256 deadline, bytes calldata signature) external"
