@@ -49,6 +49,8 @@ export default function EligibilityChecker() {
       setHypeBalance('0');
       setError(null);
       setClaimed(false);
+      
+      window.location.reload();
     } catch (err) {
       console.error('Disconnect error:', err);
     }
