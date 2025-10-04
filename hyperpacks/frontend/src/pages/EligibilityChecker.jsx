@@ -103,7 +103,8 @@ export default function EligibilityChecker() {
       }
 
       const claimData = await response.json();
-      addDebugLog(`✅ Got signature (balance: ${ethers.formatEther(claimData.balance)} HYPE)`);
+      const balance = claimData.balance || claimData.amount;
+      addDebugLog(`✅ Got signature (balance: ${balance ? ethers.formatEther(balance) : 'undefined'} HYPE)`);
 
       // Get provider - mobile WalletConnect uses connector, desktop uses window.ethereum
       addDebugLog('🔍 Getting provider...');
