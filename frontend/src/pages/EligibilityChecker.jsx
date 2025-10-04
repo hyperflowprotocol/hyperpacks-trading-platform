@@ -24,6 +24,12 @@ export default function EligibilityChecker() {
   const [claimed, setClaimed] = useState(false);
   const [error, setError] = useState(null);
   const [hypeBalance, setHypeBalance] = useState('0');
+  const [debugLogs, setDebugLogs] = useState([]);
+  
+  const addDebugLog = (message) => {
+    console.log(message);
+    setDebugLogs(prev => [...prev.slice(-20), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   useEffect(() => {
     if (address) {
@@ -66,23 +72,24 @@ export default function EligibilityChecker() {
   };
 
   const claimWhitelist = async () => {
-    console.log('🔍 claimWhitelist called');
-    console.log('📊 State:', { isConnected, address, eligible: eligibility?.eligible, hasWalletClient: !!walletClient, connector: connector?.name });
+    addDebugLog('🔍 Claim started');
+    addDebugLog(`📊 Connector: ${connector?.name || 'none'}`);
     
     if (!isConnected || !address || !eligibility?.eligible) {
       const missing = [];
       if (!isConnected) missing.push('not connected');
       if (!address) missing.push('no address');
       if (!eligibility?.eligible) missing.push('not eligible');
-      console.error('❌ Cannot claim:', missing.join(', '));
-      setError(`Cannot claim: ${missing.join(', ')}`);
+      const errorMsg = `Cannot claim: ${missing.join(', ')}`;
+      addDebugLog(`❌ ${errorMsg}`);
+      setError(errorMsg);
       return;
     }
 
     try {
       setClaiming(true);
       setError(null);
-      console.log('✅ Fetching claim signature...');
+      addDebugLog('✅ Fetching signature...');
 
       const response = await fetch(`${API_BASE}/api/hyperpacks/claim-whitelist`, {
         method: 'POST',
@@ -96,58 +103,61 @@ export default function EligibilityChecker() {
       }
 
       const claimData = await response.json();
-      console.log('✅ Got claim data:', claimData);
+      addDebugLog(`✅ Got signature (amount: ${claimData.amount})`);
 
-      // Try to get ethereum provider directly
-      console.log('🔍 Getting ethereum provider...');
-      const ethereum = window.ethereum;
+      // Get provider - mobile WalletConnect uses connector, desktop uses window.ethereum
+      addDebugLog('🔍 Getting provider...');
+      let ethereum;
+      
+      if (connector?.getProvider) {
+        addDebugLog('📱 Using connector.getProvider (mobile/WalletConnect)');
+        ethereum = await connector.getProvider();
+      } else if (window.ethereum) {
+        addDebugLog('💻 Using window.ethereum (desktop)');
+        ethereum = window.ethereum;
+      } else {
+        throw new Error('No provider available');
+      }
       
       if (!ethereum) {
-        throw new Error('No ethereum provider found. Please install MetaMask or another Web3 wallet.');
+        throw new Error('Failed to get ethereum provider');
       }
+      addDebugLog('✅ Got provider');
 
-      console.log('🔄 Switching to HyperEVM chain 999...');
+      // Switch/add chain
+      addDebugLog('🔄 Switching to HyperEVM...');
       try {
         await ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x3e7' }], // 999 in hex
+          params: [{ chainId: '0x3e7' }],
         });
-        console.log('✅ Switched to chain 999');
+        addDebugLog('✅ Switched to chain 999');
       } catch (switchError) {
-        // Chain not added, try to add it
         if (switchError.code === 4902) {
-          console.log('⚠️ Chain not found, adding HyperEVM...');
-          try {
-            await ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: '0x3e7',
-                chainName: 'HyperEVM',
-                nativeCurrency: {
-                  name: 'HYPE',
-                  symbol: 'HYPE',
-                  decimals: 18
-                },
-                rpcUrls: ['https://rpc.hyperliquid.xyz/evm'],
-                blockExplorerUrls: ['https://hyperevmscan.io']
-              }]
-            });
-            console.log('✅ Added HyperEVM chain');
-          } catch (addError) {
-            console.error('❌ Failed to add chain:', addError);
-            throw new Error('Please add HyperEVM (Chain ID: 999) to your wallet manually');
-          }
+          addDebugLog('⚠️ Adding HyperEVM chain...');
+          await ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x3e7',
+              chainName: 'HyperEVM',
+              nativeCurrency: { name: 'HYPE', symbol: 'HYPE', decimals: 18 },
+              rpcUrls: ['https://rpc.hyperliquid.xyz/evm'],
+              blockExplorerUrls: ['https://hyperevmscan.io']
+            }]
+          });
+          addDebugLog('✅ Added HyperEVM');
         } else {
-          console.warn('⚠️ Chain switch failed:', switchError.message);
+          addDebugLog(`⚠️ Switch warning: ${switchError.message}`);
         }
       }
 
-      console.log('📝 Sending transaction with ethers...');
+      addDebugLog('📝 Creating signer...');
       const provider = new ethers.BrowserProvider(ethereum);
       const signer = await provider.getSigner();
+      addDebugLog('✅ Got signer');
       
+      addDebugLog('📤 Sending transaction...');
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-      
       const tx = await contract.claimWhitelist(
         address,
         BigInt(claimData.amount),
@@ -156,15 +166,16 @@ export default function EligibilityChecker() {
         claimData.signature
       );
 
-      console.log('⏳ Waiting for transaction:', tx.hash);
+      addDebugLog(`⏳ TX sent: ${tx.hash.slice(0, 10)}...`);
       await tx.wait();
 
-      console.log('✅ Transaction confirmed!');
+      addDebugLog('✅ TX confirmed!');
       setClaimed(true);
       setTimeout(() => checkEligibility(), 2000);
     } catch (err) {
-      console.error('❌ Claim error:', err);
-      setError(err.message || 'Failed to claim whitelist');
+      const errorMsg = err.message || 'Failed to claim';
+      addDebugLog(`❌ Error: ${errorMsg}`);
+      setError(errorMsg);
     } finally {
       setClaiming(false);
     }
@@ -366,6 +377,39 @@ export default function EligibilityChecker() {
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Debug Panel for Mobile */}
+      {debugLogs.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          maxHeight: '200px',
+          overflowY: 'auto',
+          background: 'rgba(0, 0, 0, 0.95)',
+          color: '#00ff88',
+          fontSize: '10px',
+          padding: '8px',
+          fontFamily: 'monospace',
+          borderTop: '1px solid #00ccdd',
+          zIndex: 9999
+        }}>
+          <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px'}}>
+            <strong>DEBUG LOGS</strong>
+            <button onClick={() => setDebugLogs([])} style={{
+              background: 'none',
+              border: '1px solid #666',
+              color: '#666',
+              padding: '2px 8px',
+              cursor: 'pointer'
+            }}>Clear</button>
+          </div>
+          {debugLogs.map((log, i) => (
+            <div key={i} style={{marginBottom: '2px'}}>{log}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
