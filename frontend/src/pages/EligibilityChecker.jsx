@@ -98,38 +98,66 @@ export default function EligibilityChecker() {
       const claimData = await response.json();
       console.log('✅ Got claim data:', claimData);
 
+      // Try to get ethereum provider directly
+      console.log('🔍 Getting ethereum provider...');
+      const ethereum = window.ethereum;
+      
+      if (!ethereum) {
+        throw new Error('No ethereum provider found. Please install MetaMask or another Web3 wallet.');
+      }
+
       console.log('🔄 Switching to HyperEVM chain 999...');
       try {
-        await switchChain({ chainId: 999 });
+        await ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x3e7' }], // 999 in hex
+        });
         console.log('✅ Switched to chain 999');
-      } catch (switchErr) {
-        console.warn('⚠️ Chain switch failed, continuing anyway:', switchErr.message);
+      } catch (switchError) {
+        // Chain not added, try to add it
+        if (switchError.code === 4902) {
+          console.log('⚠️ Chain not found, adding HyperEVM...');
+          try {
+            await ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x3e7',
+                chainName: 'HyperEVM',
+                nativeCurrency: {
+                  name: 'HYPE',
+                  symbol: 'HYPE',
+                  decimals: 18
+                },
+                rpcUrls: ['https://rpc.hyperliquid.xyz/evm'],
+                blockExplorerUrls: ['https://hyperevmscan.io']
+              }]
+            });
+            console.log('✅ Added HyperEVM chain');
+          } catch (addError) {
+            console.error('❌ Failed to add chain:', addError);
+            throw new Error('Please add HyperEVM (Chain ID: 999) to your wallet manually');
+          }
+        } else {
+          console.warn('⚠️ Chain switch failed:', switchError.message);
+        }
       }
 
-      console.log('⏳ Getting wallet client for chain 999...');
-      const client = walletClient || await connector?.getWalletClient?.({ chainId: 999 });
+      console.log('📝 Sending transaction with ethers...');
+      const provider = new ethers.BrowserProvider(ethereum);
+      const signer = await provider.getSigner();
       
-      if (!client) {
-        throw new Error('Unable to get wallet client for transaction signing. Please make sure your wallet supports HyperEVM (Chain ID: 999)');
-      }
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      
+      const tx = await contract.claimWhitelist(
+        address,
+        BigInt(claimData.amount),
+        BigInt(claimData.nonce),
+        BigInt(claimData.deadline),
+        claimData.signature
+      );
 
-      console.log('✅ Got wallet client, sending transaction...');
-      const hash = await client.writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'claimWhitelist',
-        args: [
-          address,
-          BigInt(claimData.amount),
-          BigInt(claimData.nonce),
-          BigInt(claimData.deadline),
-          claimData.signature
-        ],
-        chain: { id: 999 }
-      });
-
-      console.log('⏳ Waiting for transaction:', hash);
-      await publicClient.waitForTransactionReceipt({ hash });
+      console.log('⏳ Waiting for transaction:', tx.hash);
+      await tx.wait();
 
       console.log('✅ Transaction confirmed!');
       setClaimed(true);
